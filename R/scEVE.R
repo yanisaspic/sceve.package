@@ -8,36 +8,40 @@ get_default_parameters <- function() {
   #' `figures_path` & `sheets_path` the default paths where figures and result sheets are stored, respectively.
   #'
   #' `selected_genes_strategy` a function called to select a limited pool of genes for a clustering iteration.
-  #' This function is called by `extract_data`, and it expects two positional arguments: `expression` and `params`, respectively.
+  #' This function is called by `extract_data()`, and it expects two positional arguments: `expression` and `params`, respectively.
   #' By default, the n most variable genes for a clustering iteration are selected, with n=500.
   #' It outputs a vector of genes.
   #'
   #' `base_clusters_strategy` a function called to predict base clusters with multiple clustering methods.
-  #' This function is called by `get_base_clusters`, and it expects two positional arguments: `data.iteration` and `params`, respectively.
+  #' This function is called by `get_base_clusters()`, and it expects two positional arguments: `data.iteration` and `params`, respectively.
   #' By default, four clustering methods are used: densityCut, monocle3, Seurat and SHARP.
   #' It outputs a data.frame associating cells to their predicted clusters.
   #' Its rows are cells, its columns are clustering methods, and predicted populations are reported in the table.
   #'
   #' `robust_clusters_strategy` a function called to identify robust clusters from the similarity subgraphs.
-  #' This function is called by `get_robust_clusters`, and it expects two positional arguments: `subgraphs` and `params`, respectively.
+  #' This function is called by `get_meta_clusters()`, and it expects two positional arguments: `subgraphs` and `params`, respectively.
   #' By default, a robustness threshold is used to filter out subgraphs, with threshold=0.33.
   #' It outputs a list where every element is a pool of cells grouped together by multiple clustering methods.
   #' The elements are named lists, with five names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
   #'
-  #' `marker_genes_strategy` a function called to predict marker genes in every meta-cluster.
-  #' This function is called by `get_marker_genes`, and it expects three positional arguments: `meta_clusters`, `data.iteration` and `params`.
-  #' By default, an over-representation test is conducted on each cluster, to identify genes that are
-  #' frequently expressed in a cluster, but rarely expressed in the pool of cells.
-  #' It outputs a list where every element is a pool of cells grouped together by multiple clustering methods.
+  #' `marker_genes_strategy` a function called to predict the marker genes of every meta-cluster.
+  #' This function is called by `get_characterized_clusters()`, and it expects three positional arguments: `meta_clusters`, `data.iteration` and `params`.
+  #' By default, an over-representation test is conducted on every cluster to identify genes that are
+  #' frequently expressed in it, but rarely expressed in the complete pool of cells.
+  #' It outputs a list where every element is a pool of cells.
   #' The elements are named lists, with six names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label`, `markers` and `robustness`.
   #'
+  #' `characterized_clusters_strategy` a function called to identify characterized clusters.
+  #' This function is called by `get_characterized_clusters()`, and it expects two positional arguments: `meta_clusters` and `params`.
+  #' By default, a characterized cluster is a meta-cluster with at least 23 specific marker genes.
+  #' It outputs a list where every element is a pool of cells.
+  #' The elements are named lists, with seven names:
+  #' `base_clusters`, `cells`, `clustering_methods`, `label`, `markers`, `robustness` and `specific_markers`.
+  #'
   #' `leftover_cells_strategy` a function called to manage the cells in the leftover cluster of a clustering iteration.
   #' This function is called by ``
-  #' `marker_genes_strategy` a function called to describe the marker genes predicted in a meta-cluster (i.e. a robust cluster or the leftover cluster).
-  #' By default,
-  #' By default, the markers are reported in a binary matrix (they are over-represented in the cluster, or not).
   #'
   #' @return a list of parameters.
   #'
@@ -50,8 +54,9 @@ get_default_parameters <- function() {
     selected_genes_strategy=get_selected_genes.n_most_variable,
     base_clusters_strategy=get_base_clusters.default_methods,
     robust_clusters_strategy=get_robust_clusters.robustness_threshold,
+    marker_genes_strategy=get_marker_genes.over_representation,
+    characterized_clusters_strategy=get_characterized_clusters.markers_threshold,
     leftovers_strategy="default",
-    markers_strategy="default"
   )
   return(params)
 }

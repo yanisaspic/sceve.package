@@ -118,8 +118,7 @@ Each step of the clustering iteration is detailed below.
 
 With the scEVE framework, successive clustering iterations are conducted, and each iteration attempts to cluster a different pool of cells. For the first iteration, this pool of cells corresponds to the entire scRNA-seq dataset (*i.e.* population `C`). For the following iterations, the pools of cells will correspond to clusters predicted by scEVE (*e.g.* population `C.1`).
 
-For each pool of cells, a limited set of genes is selected. By default, the 500 most variable genes in the dataset are selected.
-*The function defined in `params$selected_genes_strategy` is called to select the genes.*
+For each pool of cells, a limited set of genes is selected. By default, the 500 most variable genes in the dataset are selected. *The function defined in `params$selected_genes_strategy` is called to select the genes.*
 
 We call the function `extract_data()` to extract a specific pool of cells with their most variable genes.
 
@@ -208,13 +207,47 @@ The composite U-MAP plots show the meta-clusters predicted. Each meta-cluster is
 
 ### Biological characterization of the meta-clusters
 
-In order to facilitate the biological analysis of the clustering iteration, the scEVE framework predicts marker genes for each cluster. By default, an over-representation test is conducted on each cluster, to identify genes that are frequently expressed in a cluster, but rarely expressed in the pool of cells. 
-*The default approach can be replaced by setting a different function in `params$marker_genes_strategy`.*
+In order to facilitate the biological analysis of clusters, the scEVE framework predicts marker genes for each meta-cluster. By default, an over-representation test is conducted on each cluster, to identify genes that are frequently expressed in a cluster, but rarely expressed in the pool of cells. *This default approach to predict marker genes can be replaced by setting a different function in `params$marker_genes_strategy`.*
 
-Following this analysis, any cluster poorly characterized is filtered out. By default, clusters with less than 23 marker genes (*i.e.* \sqrt{500} genes sampled) are filtered out. As a result, the cells in these clusters are integrated to the leftover cluster, and a new iteration of the marker genes detection is conducted.
-*The function set in `params$characterized_clusters_strategy` is called to filter out poorly characterized clusters.*
+Following this analysis, any robust cluster poorly characterized is filtered out. By default, robust clusters with less than 22 (*i.e.* \sqrt{n}, with n the number of genes selected prior) specific marker genes are filtered out. Cells belonging to a filtered out cluster are added to the leftover cluster, and a new attempt at predicting marker genes is conducted. *The function set in `params$characterized_clusters_strategy` is called to filter out poorly characterized clusters.*
 
-These two steps are conducted successively by calling the function `get_characterized_clusters()`.
+This two-step process is conducted by calling the function `get_characterized_clusters()`.
+
+```{r get_characterized_clusters}
+
+```
+
+A summary figure is drawn...
+
+```{r draw_characterized_clusters}
+
+```
+
+Here, we can see that...
+
+### End of the clustering iteration
+
+As a result of this last step, either (1) one or more robust clusters are characterized, or (2) none of the robust clusters are characterized.
+
+-   In the first case, new clustering iterations will be conducted automatically and independently by scEVE to further sub-divide each predicted cluster. **Note** that for each of these clustering iterations, **the robustness threshold used to identify robust clusters will be updated**. It will correspond to the robustness of the predicted cluster that scEVE attempts to sub-divide. In other words, sub-clusters will be predicted if, and only if, they are more robust than their parent cluster.
+
+-   In the second case, where no characterized robust cluster is predicted, the cell population is likely homogeneous, and it won't be divided by scEVE.
+
+The results of a clustering iteration - *i.e.* the cell clusters predicted, their robustness as well as their marker genes - are reported to the variable `records`. Its content will be saved in a .xlsx file, in `params$sheets_path`.
+
+The informative figures generated during the iteration are merged together in a single .pdf file named after the cell population clustered (*e.g.* `C.pdf`). This file will be saved in `params$figures_path`.
+
+To illustrate how the scEVE framework operates iteratively, we will look at the start of the next clustering iteration.
+
+```{r next_iteration}
+population <- "C.1"
+data.iteration <- extract_data(population, expression.init, SeuratObject.init, records, params, figures=FALSE)
+draw_extracted_data(population, SeuratObject.init=SeuratObject.init, records=records)
+```
+
+Here, unlike the first time we ran `draw_extracted_data()`, only a subset of cells is darkened. They correspond to the cells in the population `C.1`, and they will be the pool of cells that scEVE attempts to divide during its second clustering iteration. Because `C.1` had a robustness of 0.49, in this new iteration, robust clusters will correspond to meta-clusters with a robustness greater than 0.49.
+
+Eventually, every cluster predicted with the scEVE framework will correspond to homogeneous populations. At this point, the clustering analysis is over, and results with multiple cell resolutions and explicit robustness values will be generated.
 
 # Open framework for developers
 

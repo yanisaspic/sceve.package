@@ -160,8 +160,8 @@ get_robust_clusters.robustness_threshold <- function(subgraphs, params, robustne
   #'
   #' @export
   #'
-  # subgraph_is_robust <- function(subgraph) {subgraph$robustness > robustness_threshold}
-  # subgraphs <- Filter(f=subgraph_is_robust, x=subgraphs)
+  subgraph_is_robust <- function(subgraph) {subgraph$robustness > robustness_threshold}
+  subgraphs <- Filter(f=subgraph_is_robust, x=subgraphs)
   return(subgraphs)
 }
 
@@ -212,6 +212,7 @@ get_meta_clusters <- function(population, base_clusters, data.iteration, params,
   #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
   #'
   #' @import grDevices
+  #' @import stats
   #'
   #' @export
   #'
@@ -221,6 +222,7 @@ get_meta_clusters <- function(population, base_clusters, data.iteration, params,
   subgraphs <- get_subgraphs(population, strong_similarities, base_clusters, params)
   robust_clusters <- params$robust_clusters_strategy(subgraphs, params)
   meta_clusters <- add_leftover_cluster(population, robust_clusters, data.iteration)
+  meta_clusters <- stats::setNames(meta_clusters, sapply(X=meta_clusters, FUN="[[", "label"))
 
   if (figures) {
     plot <- draw_meta_clusters(meta_clusters, data.iteration)

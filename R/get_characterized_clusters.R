@@ -2,249 +2,107 @@
 
 	2025/01/24 @yanisaspic"
 
-suppressPackageStartupMessages({
-  library(ggplot2)
-  library(ggplotify)
-  library(ggVennDiagram)
-  library(glue)
-  library(stats)
-})
-source("./src/scEVE/utils/misc.R")
-
-add_occurrences_to_seeds <- function(ranked_genes, seeds) {
-  #' Add the occurrences respective to each seed. This information is used for the overrepresentation test.
+test_over_representation <- function(cells_in_cluster.expressing, cells_in_pool.expressing,
+                                     cells_in_cluster, cells_in_pool) {
+  #' Test the over-representation of a gene in a cluster with regards to the frequency of its expression
+  #' in the cluster and in the complete pool of cells.
   #'
-  #' @param ranked_genes: a data.frame where: ranks are rows | cells are cols | cells are genes.
-  #' @param seeds: a nested list, where each sub-list has three keys: 'consensus', 'cells' and 'clusters'.
+  #' @param cells_in_cluster.expressing the number of cells expressing the gene in the cluster.
+  #' @param cells_in_pool.expressing the number of cells expressing the gene in the pool of cells.
+  #' @param cells_in_cluster the number of cells in the cluster.
+  #' @param cells_in_pool the number of cells in the pool of cells.
   #'
-  #' @return a nested list, where each sub-list has four keys: 'consensus', 'cells', 'clusters' and 'genes'.
+  #' @return the p-value of the over-representation test.
   #'
-  get_occurrences.seed <- function(seed){get_occurrences(ranked_genes[, seed$cells])}
-  occurrences <- lapply(X=seeds, FUN=get_occurrences.seed)
-  for (i in 1:length(seeds)) {
-    seeds[[i]]$occurrences <- occurrences[[i]]
-  }
-  return(seeds)
-}
-
-get_efforts.plot <- function(efforts.frame) {
-  #' Get a boxplot corresponding to the effort w.r.t. the group of cells.
-  #' The whiskers correspond to the minimum and maximum values.
+  #' @import stats
   #'
-  #' @param efforts.frame: a data.frame with two columns: 'effort' and 'seed'.
-  #'
-  #' @return a boxplot where x=seed, y=effort and group=seed.
-  #'
-  efforts.plot <- ggplot(data=efforts.frame,
-                         aes(x=seed, y=effort, group=seed, fill=seed)) +
-    geom_boxplot(coef=NULL) +
-    ggtitle("Sampling effort of cells, per consensus cluster.")
-  return(efforts.plot)
-}
-
-test_overrepresentation <- function(q, m, N, k) {
-  #' Get the probability of observing x successes or more in a sample.
-  #'
-  #' @param q: number of successes in sample.
-  #' @param m: number of successes in reference.
-  #' @param n: size of the reference.
-  #' @param k: size of the sample.
-  #'
-  #' @return a numeric.
-  #'
-
-  # phyper tests Pr(X > q): so use q-1 #
-  ######################################
-  n <- N - m
-  pvalue <- phyper(q-1, m, n, k, lower.tail=FALSE)
+  q <- cells_in_cluster.expressing - 1 # phyper measures P(X > q), but we want P(X >= cells_in_cluster.expressing)
+  n <- cells_in_pool - cells_in_pool.expressing
+  pvalue <- stats::phyper(q, cells_in_pool.expressing, n, cells_in_cluster, lower.tail=FALSE)
   return(pvalue)
 }
 
-test_overrepresentation.gene <- function(gene, overrepresentation.frame) {
-  #' Test if a gene is over-represented in a sample w.r.t. a reference.
+get_marker_genes.over_representation <- function(meta_clusters, data.iteration, params, pvalue_threshold=0.05) {
+  #' Get marker genes characteristic of each meta-cluster by conducting an over-representation test of the expressed genes.
   #'
-  #' @param gene: a character.
-  #' @param overrepresentation.frame: a data.frame with two columns: 'sample' and 'population'. The row names are genes.
+  #' @param meta_clusters a list where every element is a pool of cells.
+  #' The elements are named lists, with five names:
+  #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
+  #' @param data.iteration a named list, with three names: `expression`, `SeuratObject` and `ranking_of_genes`.
+  #' They correspond to the scRNA-seq expression matrix of a specific cell population,
+  #' as well as the SeuratObject and the ranking of genes generated from this matrix.
+  #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
+  #' @param pvalue_threshold the pvalue threshold below which genes are considered as marker genes.
   #'
-  #' @return a numeric.
+  #' @return a list where every element is a pool of cells.
+  #' The elements are named lists, with six names:
+  #' `base_clusters`, `cells`, `clustering_methods`, `label`, `markers` and `robustness`.
   #'
-  q <- overrepresentation.frame[gene, "sample"]
-  m <- overrepresentation.frame[gene, "population"]
-  N <- sum(overrepresentation.frame$population)
-  k <- sum(overrepresentation.frame$sample)
-  pvalue <- test_overrepresentation(q, m, N, k)
-  return(pvalue)
-}
+  #' @import stats
+  #'
+  #' @export
+  #'
+  cells_in_iteration <- ncol(data.iteration$ranking_of_genes)
+  occurrences_of_genes.iteration <- table(data.iteration$ranking_of_genes)
 
-test_overrepresentation.seed <- function(seed, occurrences.population) {
-  #' Test which genes in a seed are overrepresented w.r.t. minimal effort in the seed.
-  #'
-  #' @param seed: a list with four keys: 'consensus', 'cells', 'clusters' and 'genes'.
-  #' @param occurrences.population: a data.frame where: genes are rows | sampling effort is cols | cells are occurrences.
-  #'
-  #' @return a data.frame with four columns: 'sample', 'population', 'pvalue' and 'adj_pvalue'
-  #'
-  occurrences.seed <- seed$occurrences
-  occurrences.population <- occurrences.population[rownames(occurrences.seed),]
-  overrepresentation.frame <- data.frame(sample=occurrences.seed[, length(occurrences.seed)],
-                                         population=occurrences.population[, length(occurrences.population)])
-  rownames(overrepresentation.frame) <- rownames(occurrences.seed)
+  get_marker_genes.over_representation.cluster <- function(cluster) {
+    cells_in_cluster <- length(cluster$cells)
+    occurrences_of_genes.cluster <- table(data.iteration$ranking_of_genes[, cluster$cells])
 
-  ### p-values w/ correction ###
-  ##############################
-  pvalues <- sapply(X=rownames(overrepresentation.frame),
-                    FUN=test_overrepresentation.gene,
-                    overrepresentation.frame=overrepresentation.frame)
-  overrepresentation.frame$pvalue <- pvalues
-  overrepresentation.frame$adj_pvalue <- p.adjust(pvalues, method="BH")
-  return(overrepresentation.frame)
-}
+    test_over_representation.gene <- function(gene) {
+      test_over_representation(occurrences_of_genes.cluster[gene], cells_in_cluster,
+                               occurrences_of_genes.iteration[gene], cells_in_iteration)}
 
-get_markers.seed <- function(seed, occurrences.population) {
-  #' Get genes significantly over-represented in a seed, w.r.t. the population w/ equal sampling effort.
-  #'
-  #' @param seed: a list with four keys: 'consensus', 'cells', 'clusters' and 'genes'.
-  #' @param occurrences.population: a data.frame where: genes are rows | sampling effort is cols | cells are occurrences.
-  #'
-  #' @return a vector of characters.
-  #'
-  overrepresentation.frame <- test_overrepresentation.seed(seed, occurrences.population)
-  is_significant <- overrepresentation.frame$adj_pvalue < 0.05
-  markers <- rownames(overrepresentation.frame[is_significant, ])
-  return(markers)
-}
-
-get_markers <- function(seeds, occurrences.population) {
-  #' Identify markers w.r.t. their respective seed.
-  #'
-  #' @param seeds: a nested list, where each sub-list has four keys: 'consensus', 'cells', 'clusters' and 'genes'.
-  #' @param occurrences.population: a data.frame where: genes are rows | sampling effort is cols | cells are occurrences.
-  #'
-  #' @return a nested list with two keys: 'seed' and 'all'.
-  #'
-  respective_markers <- lapply(X=seeds,
-                               FUN=get_markers.seed,
-                               occurrences.population=occurrences.population)
-  all_markers <- unlist(respective_markers)
-  markers <- list(seed=respective_markers, all=all_markers)
-  return(markers)
-}
-
-add_specific_markers <- function(seeds, markers) {
-  #' Add the markers w.r.t. the seeds.
-  #'
-  #' @param seeds: a nested list, where each sub-list has four keys: 'consensus', 'cells', 'clusters' and 'markers'.
-  #' @param markers: a nested list with two keys: 'seed' and 'all'.
-  #'
-  #' @return a nested list, where each sub-list has five keys: 'consensus', 'cells', 'clusters', 'markers' and 'specific_markers'.
-  #'
-  all_markers <- markers[["all"]]
-  unspecific_markers <- unique(all_markers[duplicated(all_markers)])
-  for (i in 1:length(seeds)) {
-    specific_markers <- setdiff(markers$seed[[i]], unspecific_markers)
-    seeds[[i]]$specific_markers <- specific_markers
+    pvalues <- sapply(X=names(occurrences_of_genes.cluster), FUN=test_over_representation.gene, USE.NAMES=FALSE)
+    adjusted_pvalues <- stats::p.adjust(pvalues, method="BH")
+    marker_genes <- pvalues[adjusted_pvalues < pvalue_threshold]
+    marker_genes <- sort(marker_genes)
+    return(marker_genes)
   }
-  return(seeds)
+
+  for (i in 1:length(meta_clusters)) {
+    meta_clusters[[i]][["markers"]] <- get_marker_genes.over_representation.cluster(meta_clusters[[i]])}
+  return(meta_clusters)
 }
 
-get_markers.plot <- function(markers, population, params) {
-  #' Get an upset plot corresponding to the intersection of marker genes between sets.
+get_specific_markers <- function(meta_clusters) {
+  #' Get marker genes specific to each meta-cluster.
   #'
-  #' @param markers: a nested list with two keys: 'seed' and 'all'.
-  #' @param population: a character.
-  #' @param params: a list of parameters, with 'n_HVGs'.
+  #' @param meta_clusters a list where every element is a pool of cells.
+  #' The elements are named lists, with six names:
+  #' `base_clusters`, `cells`, `clustering_methods`, `label`, `markers` and `robustness`.
   #'
-  #' @return an upset plot.
+  #' @return a list where every element is a pool of cells.
+  #' The elements are named lists, with seven names:
+  #' `base_clusters`, `cells`, `clustering_methods`, `label`, `markers`, `robustness` and `specific_markers`.
   #'
-  labels <- paste(population, 1:length(markers$seed), sep=".")
-  markers.plot <- ggVennDiagram(markers$seed,
-                                category.names=labels,
-                                force_upset=TRUE,
-                                order.set.by="name",
-                                order.intersect.by="none",
-                                relative_height=1.6,
-                                relative_width=0.4)
+  markers <- unlist(sapply(X=meta_clusters, FUN="[[", "markers"))
+  markers <- table(names(markers))
+  general_markers <- markers[markers > 1]
 
-  ### use the color palette of seeds ###
-  ######################################
-
-  # intersection dots
-  intersect_colors.dots <- rep(NA, length(markers.plot[[1]]$data$name))
-  intersect_colors.dots[1:length(labels)] <- labels
-  markers.plot[[1]]$layers[[1]]$aes_params$colour <- NULL
-  markers.plot[[1]]$layers[[2]]$aes_params$colour <- NULL
-  markers.plot[[1]] <- markers.plot[[1]] +
-    aes(colour=intersect_colors.dots) +
-    theme(legend.position="none")
-
-  # intersection bars
-  intersect_colors.bars <- rep(NA, length(markers.plot[[2]]$data$name))
-  intersect_colors.bars[1:length(labels)] <- labels
-  markers.plot[[2]] <- markers.plot[[2]] +
-    aes(fill=intersect_colors.bars) +
-    theme_classic() +
-    theme(legend.position="none", axis.text.y=element_text(vjust=0.25),
-          panel.grid.major.y=element_line(linewidth=0.5),
-          axis.line=element_blank(),
-          axis.ticks.x=element_line(colour="#00000000"),
-          axis.text.x=element_text(colour="#00000000")) +
-    scale_y_continuous(expand=expansion(mult=c(0, .05))) +
-    ggtitle("Over-represented HVGs")
-
-  # size bars
-  markers.plot[[3]] <- markers.plot[[3]] + aes(fill=name) +
-    theme(legend.position="none") +
-    geom_vline(xintercept=sqrt(params$n_HVGs), linetype="dashed")
-
-  return(markers.plot)
+  get_specific_markers.cluster <- function(cluster) {setdiff(names(cluster$markers), names(general_markers))}
+  for (i in 1:length(meta_clusters)) {
+    meta_clusters[[i]][["specific_markers"]] <- get_specific_markers.cluster(meta_clusters[[i]])}
+  return(meta_clusters)
 }
 
-draw_genes <- function(data.loop, seeds, population, params) {
-  #' Draw two plots corresponding to:
-  #' - a boxplot, with populations as x-axis and number of HVGs measured as y-axis.
-  #' - an upsetplot, where each bar corresponds to a set of marker genes.
-  #' The marker genes specific to a population are colorized.
+get_characterized_clusters.specific_markers_threshold <- function(robust_clusters, params,
+                                                                  specific_markers_threshold=22) {
+  #' Get characterized robust clusters, i.e. robust clusters with a minimal number of specific marker genes.
   #'
-  #' @param data.loop: a list of four data.frames: 'expression.loop', 'occurrences.loop', 'SeurObj.loop', and 'ranked_genes.loop'.
-  #' @param seeds: a nested list, where each sub-list has three keys: 'consensus', 'cells' and 'clusters'.
-  #' @param population: a character.
-  #' @param params: a list of parameters, with 'n_HVGs'.
+  #' @param meta_clusters a list where every element is a pool of cells.
+  #' The elements are named lists, with seven names:
+  #' `base_clusters`, `cells`, `clustering_methods`, `label`, `markers`, `robustness` and `specific_markers`.
+  #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
+  #' @param specific_markers_threshold the minimal number of specific marker genes expected in a characterized cluster.
   #'
-  markers.loop <- get_markers(seeds, data.loop$occurrences.loop)
-  markers.plot <- get_markers.plot(markers.loop, population, params)
-
-  pdf(file = glue("{params$figures_dir}/{population}_genes.pdf"))
-  print(markers.plot)
-  dev.off()
-}
-
-get_genes <- function(data.loop, seeds, params, population, figures) {
-  #' Identify relevant genes to characterize the seeds found.
-  #' If too little genes are identified, the iteration is considered seedless.
+  #' @return a list where every element is a pool of cells.
+  #' The elements are named lists, with seven names:
+  #' `base_clusters`, `cells`, `clustering_methods`, `label`, `markers`, `robustness` and `specific_markers`.
   #'
-  #' @param data.loop: a list of four data.frames: 'expression.loop', 'occurrences.loop', 'SeurObj.loop', and 'ranked_genes.loop'.
-  #' @param seeds: a nested list, where each sub-list has three keys: 'consensus', 'cells' and 'clusters'.
-  #' @param params: a list of parameters, with 'n_HVGs'.
-  #' @param population: a character.
-  #' @param figures: a boolean. If TRUE, draw figures summarizing the genes identification.
+  #' @export
   #'
-  #' @return a nested list, where each sub-list has five keys: 'consensus', 'cells', 'clusters', 'markers' and 'specific_markers'.
-  #'
-
-  # get seed-specific markers
-  ###########################
-  seeds <- add_occurrences_to_seeds(data.loop$ranked_genes.loop, seeds)
-  markers.loop <- get_markers(seeds, data.loop$occurrences.loop)
-  for (i in 1:length(seeds)) {seeds[[i]]$markers <- markers.loop$seed[[i]]}
-  seeds <- add_specific_markers(seeds, markers.loop)
-  if (figures) {draw_genes(data.loop, seeds, population, params)}
-
-  # if any seed is poorly characterized, the iteration is fruitless
-  #################################################################
-  is_informative <- function(seed) {length(seed$markers) >= sqrt(params$n_HVGs)}
-  informative_seeds <- Filter(f=is_informative, x=seeds)
-  if (length(seeds) != length(informative_seeds)) {
-    seeds <- list()
-  }
-  return(seeds)
+  is_characterized <- function(cluster) {length(cluster$specific_markers) > specific_markers_threshold}
+  characterized_clusters <- Filter(f=is_characterized, x=robust_clusters)
+  return(characterized_clusters)
 }

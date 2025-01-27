@@ -2,7 +2,9 @@
 % Please edit documentation in R/scEVE.R
 \name{get_default_parameters}
 \alias{get_default_parameters}
-\title{"Main functions called to condut a scEVE clustering analysis.}
+\title{Get the default parameters of the scEVE algorithm. These parameters are:
+\code{random_state} the integer seed used to have deterministic results.
+\code{figures_path} & \code{sheets_path} the default paths where figures and result sheets are stored, respectively.}
 \usage{
 get_default_parameters()
 }
@@ -10,43 +12,40 @@ get_default_parameters()
 a list of parameters.
 }
 \description{
-\if{html}{\out{<div class="sourceCode">}}\preformatted{2025/01/16 @yanisaspic"
-}\if{html}{\out{</div>}}
-
-Get the default parameters of the scEVE algorithm. These parameters are:
-\code{random_state} the integer seed used to have deterministic results.
-\code{figures_path} & \code{sheets_path} the default paths where figures and result sheets are stored, respectively.
-}
-\details{
 \code{selected_genes_strategy} a function called to select a limited pool of genes for a clustering iteration.
-This function is called by \code{extract_data}, and it expects two positional arguments: \code{expression} and \code{params}, respectively.
+This function is called by \code{extract_data()}, and it expects two positional arguments: \code{expression} and \code{params}, respectively.
 By default, the n most variable genes for a clustering iteration are selected, with n=500.
 It outputs a vector of genes.
-
+}
+\details{
 \code{base_clusters_strategy} a function called to predict base clusters with multiple clustering methods.
-This function is called by \code{get_base_clusters}, and it expects two positional arguments: \code{data.iteration} and \code{params}, respectively.
+This function is called by \code{get_base_clusters()}, and it expects two positional arguments: \code{data.iteration} and \code{params}, respectively.
 By default, four clustering methods are used: densityCut, monocle3, Seurat and SHARP.
 It outputs a data.frame associating cells to their predicted clusters.
 Its rows are cells, its columns are clustering methods, and predicted populations are reported in the table.
 
 \code{robust_clusters_strategy} a function called to identify robust clusters from the similarity subgraphs.
-This function is called by \code{get_robust_clusters}, and it expects two positional arguments: \code{subgraphs} and \code{params}, respectively.
+This function is called by \code{get_meta_clusters()}, and it expects two positional arguments: \code{subgraphs} and \code{params}, respectively.
 By default, a robustness threshold is used to filter out subgraphs, with threshold=0.33.
 It outputs a list where every element is a pool of cells grouped together by multiple clustering methods.
 The elements are named lists, with five names:
 \code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label} and \code{robustness}.
 
-\code{marker_genes_strategy} a function called to predict marker genes in every meta-cluster.
-This function is called by \code{get_marker_genes}, and it expects three positional arguments: \code{meta_clusters}, \code{data.iteration} and \code{params}.
-By default, an over-representation test is conducted on each cluster, to identify genes that are
-frequently expressed in a cluster, but rarely expressed in the pool of cells.
-It outputs a list where every element is a pool of cells grouped together by multiple clustering methods.
+\code{marker_genes_strategy} a function called to predict the marker genes of every meta-cluster.
+This function is called by \code{get_characterized_clusters()}, and it expects three positional arguments: \code{meta_clusters}, \code{data.iteration} and \code{params}.
+By default, an over-representation test is conducted on every cluster to identify genes that are
+frequently expressed in it, but rarely expressed in the complete pool of cells.
+It outputs a list where every element is a pool of cells.
 The elements are named lists, with six names:
 \code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label}, \code{markers} and \code{robustness}.
 
+\code{characterized_clusters_strategy} a function called to identify characterized clusters.
+This function is called by \code{get_characterized_clusters()}, and it expects two positional arguments: \code{meta_clusters} and \code{params}.
+By default, a characterized cluster is a meta-cluster with at least 23 specific marker genes.
+It outputs a list where every element is a pool of cells.
+The elements are named lists, with seven names:
+\code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label}, \code{markers}, \code{robustness} and \code{specific_markers}.
+
 \code{leftover_cells_strategy} a function called to manage the cells in the leftover cluster of a clustering iteration.
 This function is called by ``
-\code{marker_genes_strategy} a function called to describe the marker genes predicted in a meta-cluster (i.e. a robust cluster or the leftover cluster).
-By default,
-By default, the markers are reported in a binary matrix (they are over-represented in the cluster, or not).
 }

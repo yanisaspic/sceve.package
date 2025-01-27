@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_meta_clusters.R
 \name{get_transaction_database}
 \alias{get_transaction_database}
-\title{"Functions used to get robust clusters, i.e. cell clusters predicted by multiple methods.}
+\title{Get a transaction database from the base clusters predicted.}
 \usage{
 get_transaction_database(base_clusters)
 }
@@ -15,8 +15,5 @@ a transactions object, where every cell is a transaction and every predicted
 cluster is an item.
 }
 \description{
-\if{html}{\out{<div class="sourceCode">}}\preformatted{2025/01/21 @yanisaspic"
-}\if{html}{\out{</div>}}
-
 Get a transaction database from the base clusters predicted.
 }
