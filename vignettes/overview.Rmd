@@ -118,7 +118,8 @@ Each step of the clustering iteration is detailed below.
 
 With the scEVE framework, successive clustering iterations are conducted, and each iteration attempts to cluster a different pool of cells. For the first iteration, this pool of cells corresponds to the entire scRNA-seq dataset (*i.e.* population `C`). For the following iterations, the pools of cells will correspond to clusters predicted by scEVE (*e.g.* population `C.1`).
 
-For each pool of cells, a limited set of genes is selected. By default, the 500 most variable genes in the dataset are selected. *The function defined in `params$selected_genes_strategy` is called to select the genes.*
+For each pool of cells, a limited set of genes is selected. By default, the 500 most variable genes in the dataset are selected. \
+*The function defined in `params$selected_genes_strategy` is called to select the genes.*
 
 We call the function `extract_data()` to extract a specific pool of cells with their most variable genes.
 
@@ -175,7 +176,8 @@ The scEVE framework quantifies the similarity of every pair of predicted cluster
 
 The drawn graph is disjoint, and every sub-graph (*i.e.* connected component) in it indicates that a subset of cells has been grouped together by multiple clustering methods.The sub-graphs can have multiple structures ; for instance, if every method were to predict the exact same cluster, the resulting sub-graph would be a dense graph, where every edge is weighted 1.
 
-The scEVE framework will exploit the structure of each sub-graph to quantify their robustness. By default, any subgraph with a robustness inferior to 0.33 is filtered out. For each remaining subgraph, the cells at the intersection of the base clusters are grouped in a robust cluster. *The function used to filter out sub-graphs is stored in `params$robust_clusters_strategy`.*
+The scEVE framework will exploit the structure of each sub-graph to quantify their robustness. By default, any subgraph with a robustness inferior to 0.33 is filtered out. For each remaining subgraph, the cells at the intersection of the base clusters are grouped in a robust cluster.\
+*The function used to filter out sub-graphs is stored in `params$robust_clusters_strategy`.*
 
 Cells unassigned to a robust cluster will be grouped together in a **leftover cluster**. Both the robust clusters and the leftover cluster are **meta-clusters**. We retrieve them by calling the function `get_meta_clusters()`.
 
@@ -207,9 +209,11 @@ The composite U-MAP plots show the meta-clusters predicted. Each meta-cluster is
 
 ### Biological characterization of the meta-clusters
 
-In order to facilitate the biological analysis of clusters, the scEVE framework predicts marker genes for each meta-cluster. By default, an over-representation test is conducted on each cluster, to identify genes that are frequently expressed in a cluster, but rarely expressed in the pool of cells. *This default approach to predict marker genes can be replaced by setting a different function in `params$marker_genes_strategy`.*
+In order to facilitate the biological analysis of clusters, the scEVE framework predicts marker genes for each meta-cluster. By default, an over-representation test is conducted on each cluster, to identify genes that are frequently expressed in a cluster, but rarely expressed in the pool of cells.\
+*This default approach to predict marker genes can be replaced by setting a different function in `params$marker_genes_strategy`.*
 
-Following this analysis, any robust cluster poorly characterized is filtered out. By default, robust clusters with less than 22 (*i.e.* \sqrt{n}, with n the number of genes selected prior) specific marker genes are filtered out. Cells belonging to a filtered out cluster are added to the leftover cluster, and a new attempt at predicting marker genes is conducted. *The function set in `params$characterized_clusters_strategy` is called to filter out poorly characterized clusters.*
+Following this analysis, any robust cluster poorly characterized is filtered out. By default, robust clusters with less than 22 (*i.e.* square root of n, with n the number of genes selected prior) specific marker genes are filtered out. Cells belonging to a filtered out cluster are added to the leftover cluster, and a new attempt at predicting marker genes is conducted.\
+*The function set in `params$characterized_clusters_strategy` is called to filter out poorly characterized clusters.*
 
 This two-step process is conducted by calling the function `get_characterized_clusters()`.
 
