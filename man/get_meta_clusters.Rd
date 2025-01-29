@@ -13,9 +13,10 @@ get_meta_clusters(population, base_clusters, data.iteration, params, figures)
 \item{base_clusters}{a data.frame associating cells to their predicted clusters.
 Its rows are cells, its columns are clustering methods, and predicted populations are reported in the table.}
 
-\item{data.iteration}{a named list, with three names: \code{expression}, \code{SeuratObject} and \code{ranking_of_genes}.
-They correspond to the scRNA-seq expression matrix of a specific cell population,
-as well as the SeuratObject and the ranking of genes generated from this matrix.}
+\item{data.iteration}{a named list, with four names: \code{expression}, \code{SeuratObject}, \code{ranking_of_genes} and \code{expression.init}.
+The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
+as well as the SeuratObject and the ranking of genes generated from this matrix.
+The last element corresponds to the full scRNA-seq expression matrix.}
 
 \item{params}{a list of parameters (cf. \code{sceve::get_default_parameters()}).}
 

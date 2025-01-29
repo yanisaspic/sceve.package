@@ -14,9 +14,10 @@ add_leftover_cluster(population, robust_clusters, data.iteration)
 The elements are named lists, with five names:
 \code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label} and \code{robustness}.}
 
-\item{data.iteration}{a named list, with three names: \code{expression}, \code{SeuratObject} and \code{ranking_of_genes}.
-They correspond to the scRNA-seq expression matrix of a specific cell population,
-as well as the SeuratObject and the ranking of genes generated from this matrix.}
+\item{data.iteration}{a named list, with four names: \code{expression}, \code{SeuratObject}, \code{ranking_of_genes} and \code{expression.init}.
+The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
+as well as the SeuratObject and the ranking of genes generated from this matrix.
+The last element corresponds to the full scRNA-seq expression matrix.}
 }
 \value{
 a list where every element is a pool of cells.

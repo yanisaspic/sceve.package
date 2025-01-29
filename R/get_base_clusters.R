@@ -130,9 +130,10 @@ get_base_clusters.default_methods <- function(data.iteration, params,
                                               clustering_methods=c("densityCut", "monocle3", "Seurat", "SHARP")) {
   #' Apply multiple clustering methods on scRNA-seq data to predict base clusters.
   #'
-  #' @param data.iteration a named list, with three names: `expression`, `SeuratObject` and `ranking_of_genes`.
-  #' They correspond to the scRNA-seq expression matrix of a specific cell population,
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
+  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
   #' as well as the SeuratObject and the ranking of genes generated from this matrix.
+  #' The last element corresponds to the full scRNA-seq expression matrix.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #' @param clustering_methods a vector of valid clustering methods.
   #'
@@ -212,9 +213,10 @@ get_base_clusters <- function(population, data.iteration, params, figures) {
   #' Get base clusters predicted with multiple clustering methods.
   #'
   #' @param population a character. It corresponds to the cell population that scEVE will attempt to cluster.
-  #' @param data.iteration a named list, with three names: `expression`, `SeuratObject` and `ranking_of_genes`.
-  #' They correspond to the scRNA-seq expression matrix of a specific cell population,
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
+  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
   #' as well as the SeuratObject and the ranking of genes generated from this matrix.
+  #' The last element corresponds to the full scRNA-seq expression matrix.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #' @param figures a boolean that indicates if figures should be drawn to explain the clustering iteration.
   #'

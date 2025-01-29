@@ -17,10 +17,13 @@ Imports:
     arules,
     assertthat,
     clues,
+    colorspace,
     densitycut,
+    dplyr,
     forcats,
     ggplot2,
     ggplotify,
+    ggVennDiagram,
     glue,
     grDevices,
     gridExtra,
@@ -35,6 +38,9 @@ Imports:
     Seurat,
     SeuratWrappers,
     SHARP,
+    SingleCellExperiment,
+    SummarizedExperiment,
+    TMExplorer,
     viridis
 Depends: 
     R (>= 2.10)

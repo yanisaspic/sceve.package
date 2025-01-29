@@ -22,15 +22,16 @@ test_over_representation <- function(cells_in_cluster.expressing, cells_in_pool.
   return(pvalue)
 }
 
-get_marker_genes.over_representation <- function(meta_clusters, data.iteration, params, pvalue_threshold=0.05) {
+add_marker_genes.over_representation <- function(meta_clusters, data.iteration, params, pvalue_threshold=0.001) {
   #' Get marker genes characteristic of each meta-cluster by conducting an over-representation test of the expressed genes.
   #'
   #' @param meta_clusters a list where every element is a pool of cells.
   #' The elements are named lists, with five names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
-  #' @param data.iteration a named list, with three names: `expression`, `SeuratObject` and `ranking_of_genes`.
-  #' They correspond to the scRNA-seq expression matrix of a specific cell population,
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
+  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
   #' as well as the SeuratObject and the ranking of genes generated from this matrix.
+  #' The last element corresponds to the full scRNA-seq expression matrix.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #' @param pvalue_threshold the pvalue threshold below which genes are considered as marker genes.
   #'
@@ -57,6 +58,7 @@ get_marker_genes.over_representation <- function(meta_clusters, data.iteration, 
     adjusted_pvalues <- stats::p.adjust(pvalues, method="BH")
     marker_genes <- pvalues[adjusted_pvalues < pvalue_threshold]
     marker_genes <- sort(marker_genes)
+    marker_genes <- -log10(marker_genes)
     return(marker_genes)
   }
 
@@ -76,7 +78,8 @@ get_specific_markers <- function(meta_clusters) {
   #' The elements are named lists, with seven names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label`, `markers`, `robustness` and `specific_markers`.
   #'
-  markers <- unlist(sapply(X=meta_clusters, FUN="[[", "markers"))
+  markers <- sapply(X=meta_clusters, FUN="[[", "markers")
+  markers <- unlist(unname(markers))
   markers <- table(names(markers))
   general_markers <- markers[markers > 1]
 
@@ -86,15 +89,15 @@ get_specific_markers <- function(meta_clusters) {
   return(meta_clusters)
 }
 
-get_characterized_clusters.specific_markers_threshold <- function(robust_clusters, params,
-                                                                  specific_markers_threshold=22) {
-  #' Get characterized robust clusters, i.e. robust clusters with a minimal number of specific marker genes.
+get_characterized_clusters.markers_threshold <- function(meta_clusters, params, markers_threshold=22) {
+  #' Check which meta-clusters are characterized, i.e. which meta-clusters have a minimum number of marker genes.
+  #' If every meta-cluster is characterized, return them. Else, return none.
   #'
   #' @param meta_clusters a list where every element is a pool of cells.
   #' The elements are named lists, with seven names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label`, `markers`, `robustness` and `specific_markers`.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
-  #' @param specific_markers_threshold the minimal number of specific marker genes expected in a characterized cluster.
+  #' @param markers_threshold the minimal number of marker genes expected in a characterized cluster.
   #'
   #' @return a list where every element is a pool of cells.
   #' The elements are named lists, with seven names:
@@ -102,7 +105,120 @@ get_characterized_clusters.specific_markers_threshold <- function(robust_cluster
   #'
   #' @export
   #'
-  is_characterized <- function(cluster) {length(cluster$specific_markers) > specific_markers_threshold}
-  characterized_clusters <- Filter(f=is_characterized, x=robust_clusters)
+  is_characterized <- function(cluster) {length(cluster$markers) > markers_threshold}
+  characterized_clusters <- Filter(f=is_characterized, x=meta_clusters)
+  if (length(characterized_clusters) == length(meta_clusters)) {return(meta_clusters)}
+  return(list())
+}
+
+get_characterized_clusters <- function(population, meta_clusters, data.iteration, params, figures) {
+  #' Get characterized meta-clusters. They correspond to the sub-populations predicted by the clustering iteration.
+  #'
+  #' @param population a character. It corresponds to the cell population that scEVE will attempt to cluster.
+  #' @param meta_clusters a list where every element is a pool of cells.
+  #' The elements are named lists, with five names:
+  #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
+  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
+  #' as well as the SeuratObject and the ranking of genes generated from this matrix.
+  #' The last element corresponds to the full scRNA-seq expression matrix.
+  #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
+  #' @param figures a boolean that indicates if figures should be drawn to explain the clustering iteration.
+  #'
+  #' @return a list where every element is a characterized pool of cells.
+  #' The elements are named lists, with seven names:
+  #' `base_clusters`, `cells`, `clustering_methods`, `label`, `markers`, `robustness` and `specific_markers`.
+  #'
+  #' @import glue
+  #' @import grDevices
+  #'
+  #' @export
+  #'
+  meta_clusters <- params$marker_genes_strategy(meta_clusters, data.iteration, params)
+  meta_clusters <- get_specific_markers(meta_clusters)
+  if (figures) {
+    plot <- draw_marker_genes(meta_clusters)
+    grDevices::pdf(file=glue::glue("{params$figures_path}/{population}_marker_genes.pdf"))
+    print(plot)
+    grDevices::dev.off()}
+  characterized_clusters <- params$characterized_clusters_strategy(meta_clusters, params)
   return(characterized_clusters)
+}
+
+generate_color_scale <- function(labels){
+  #' Generate a vector of colors equal to the number of identities in the sample.
+  #' This function is directly copied from SCpubr.
+  #' c.f. https://github.com/enblacar/SCpubr/blob/main/R/utils.R
+  #'
+  #' @param labels a vector of cluster labels.
+  #'
+  #' @return a named vector of colors.
+  #'
+  #' @import colorspace
+  #' @import grDevices
+  #'
+  colors <- colorspace::qualitative_hcl(length(labels), palette = "Dark 3")
+  colors <- grDevices::col2rgb(colors)
+  colors <- grDevices::rgb2hsv(colors)
+  colors["v", ] <- colors["v", ] - 0.1
+  colors["s", ] <- colors["s", ] + 0.2
+  colors["s", ][colors["s", ] > 1] <- 1
+  colors <- grDevices::hsv(h = colors["h", ],
+                           s = colors["s", ],
+                           v = colors["v", ],
+                           alpha = 1)
+  names(colors) <- labels
+  return(colors)
+}
+
+draw_marker_genes <- function(meta_clusters) {
+  #' Get an upset-plot representing the marker genes predicted in each meta-cluster.
+  #'
+  #' @param meta_clusters a list where every element is a characterized pool of cells.
+  #' The elements are named lists, with seven names:
+  #' `base_clusters`, `cells`, `clustering_methods`, `label`, `markers`, `robustness` and `specific_markers`.
+  #'
+  #' @return a plot.
+  #'
+  #' @import ggVennDiagram
+  #' @import SCpubr
+  #'
+  #' @export
+  #'
+  get_markers.cluster <- function(cluster) {names(cluster$markers)}
+  markers <- sapply(X=meta_clusters, FUN=get_markers.cluster)
+  labels <- sapply(X=meta_clusters, FUN="[[", "label")
+  colormap <- generate_color_scale(labels)
+
+  # these functions are used to improve the aesthetics of the plots_____________
+  add_grid_colors <- function(plot) {
+    grid_colors <- rep(NA, length(plot[[1]]$data$name))
+    grid_colors[1:length(labels)] <- labels
+    plot[[1]]$layers[[1]]$aes_params$colour <- NULL
+    plot[[1]]$layers[[2]]$aes_params$colour <- NULL
+    plot[[1]] <- plot[[1]] + aes(colour=grid_colors) + scale_colour_manual(values=colormap)
+    plot[[1]] <- plot[[1]] + theme(legend.position="none")
+    return(plot)}
+
+  add_intersection_colors <- function(plot) {
+    intersection_colors <- rep(NA, length(plot[[2]]$data$name))
+    intersection_colors[1:length(labels)] <- labels
+    plot[[2]] <- plot[[2]] + aes(fill=intersection_colors) + scale_fill_manual(values=colormap)
+    plot[[2]] <- plot[[2]] + scale_y_continuous(expand=expansion(mult=c(0, .05)))
+    plot[[2]] <- plot[[2]] + theme(axis.text.y=element_text(vjust=0.25), legend.position="none")
+    return(plot)}
+
+  add_size_colors <- function(plot) {
+    plot[[3]] <- plot[[3]] + aes(fill=labels) + scale_fill_manual(values=colormap)
+    plot[[3]] <- plot[[3]] + theme(legend.position="none")
+    return(plot)}
+  #_____________________________________________________________________________
+
+  plot <- ggVennDiagram::ggVennDiagram(markers, category.names=labels, force_upset=TRUE,
+                                       order.set.by="name", order.intersect.by="none",
+                                       relative_height=1.6, relative_width=0.4)
+  plot <- add_grid_colors(plot)
+  plot <- add_intersection_colors(plot)
+  plot <- add_size_colors(plot)
+  return(plot)
 }

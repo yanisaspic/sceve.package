@@ -29,7 +29,7 @@ get_populations_at_resolution <- function(resolution, records.cells) {
   return(populations_at_resolution)
 }
 
-get_max_resolution <- function(records.cells) {
+get_maximum_resolution <- function(records.cells) {
   #' Get the maximum clustering resolution attained in a scEVE clustering analysis.
   #'
   #' @param records.cells a data.frame associating cells to their predicted populations.
@@ -39,8 +39,8 @@ get_max_resolution <- function(records.cells) {
   #'
   populations <- colnames(records.cells)
   resolutions <- sapply(X=populations, FUN=get_resolution)
-  max_resolution <- max(resolutions)
-  return(max_resolution)
+  maximum_resolution <- max(resolutions)
+  return(maximum_resolution)
 }
 
 get_cells_of_population <- function(population, records.cells) {
@@ -118,4 +118,51 @@ get_records <- function(sheets_path) {
   get_sheet <- function(sheets_name) {openxlsx::read.xlsx(sheets_path, sheet=sheets_name, rowNames=TRUE)}
   records <- sapply(X=sheets_names, FUN=get_sheet)
   return(records)
+}
+
+get_leaf_clusters <- function(records.cells) {
+  #' Get a named vector associating each cell to its most informative cluster label.
+  #'
+  #' @param records.cells a data.frame associating cells to their predicted populations.
+  #' Its rows are cells and and its columns are population. The cell values range from 0 to 1.
+  #'
+  #' @return a named vector associating cells to their most informative cluster labels.
+  #'
+  #' @import stats
+  #'
+  if (ncol(records.cells)==1) {
+    leaf_clusters <- stats::setNames(object=rep("C", nrow(records.cells)), nm=rownames(records.cells))
+    leaf_clusters <- leaf_clusters[order(names(leaf_clusters))]
+    return(leaf_clusters)}
+
+  get_labels.resolution <- function(resolution) {
+    populations_at_resolution <- get_populations_at_resolution(resolution, records.cells)
+    get_labels.population <- function(population) {
+      cells_of_population <- get_cells_of_population(population, records.cells)
+      labels.population <- stats::setNames(rep(population, length(cells_of_population)), cells_of_population)
+      return(labels)}
+    labels.resolution <- sapply(X=populations_at_resolution, FUN=get_labels.population)
+    return(labels.resolution)
+  }
+
+  # get the labels of every cell with a bottom-up approach, where cell labels are successively added
+  # from the maximum resolution to the minimal one (i.e. the label 'C').
+  labels <- sapply(X=get_maximum_resolution(records.cells):1, FUN=get_labels.resolution)
+  labels <- labels[!duplicated(names(labels))]
+  labels <- labels[order(names(labels))]
+  return(labels)
+}
+
+get_leaf_clusters.resolution <- function(resolution, records.cells) {
+  #' Get a named vector associating each cell to its most informative cluster label, at a given maximum resolution.
+  #'
+  #' @param resolution an integer.
+  #' @param records.cells a data.frame associating cells to their predicted populations.
+  #' Its rows are cells and and its columns are population. The cell values range from 0 to 1.
+  #'
+  #' @return a named vector associating cells to their most informative cluster labels, at a given maximum resolution.
+  #'
+  data.resolution <- records.cells[, get_populations_at_resolution(resolution, records.cells)]
+  leaf_clusters.resolution <- get_leaf_clusters(data.resolution)
+  return(leaf_clusters.resolution)
 }

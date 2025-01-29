@@ -173,9 +173,10 @@ add_leftover_cluster <- function(population, robust_clusters, data.iteration) {
   #' @param robust_clusters a list where every element is a pool of cells grouped together by multiple clustering methods.
   #' The elements are named lists, with five names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
-  #' @param data.iteration a named list, with three names: `expression`, `SeuratObject` and `ranking_of_genes`.
-  #' They correspond to the scRNA-seq expression matrix of a specific cell population,
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
+  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
   #' as well as the SeuratObject and the ranking of genes generated from this matrix.
+  #' The last element corresponds to the full scRNA-seq expression matrix.
   #'
   #' @return a list where every element is a pool of cells.
   #' The elements are named lists, with five names:
@@ -201,9 +202,10 @@ get_meta_clusters <- function(population, base_clusters, data.iteration, params,
   #' @param population a character. It corresponds to the cell population that scEVE will attempt to cluster.
   #' @param base_clusters a data.frame associating cells to their predicted clusters.
   #' Its rows are cells, its columns are clustering methods, and predicted populations are reported in the table.
-  #' @param data.iteration a named list, with three names: `expression`, `SeuratObject` and `ranking_of_genes`.
-  #' They correspond to the scRNA-seq expression matrix of a specific cell population,
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
+  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
   #' as well as the SeuratObject and the ranking of genes generated from this matrix.
+  #' The last element corresponds to the full scRNA-seq expression matrix.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #' @param figures a boolean that indicates if figures should be drawn to explain the clustering iteration.
   #'
@@ -211,6 +213,7 @@ get_meta_clusters <- function(population, base_clusters, data.iteration, params,
   #' The elements are named lists, with five names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
   #'
+  #' @import glue
   #' @import grDevices
   #' @import stats
   #'
@@ -226,7 +229,7 @@ get_meta_clusters <- function(population, base_clusters, data.iteration, params,
 
   if (figures) {
     plot <- draw_meta_clusters(meta_clusters, data.iteration)
-    grDevices::pdf(file=glue::glue("{params$figures_path}/{population}_robust_clusters.pdf"))
+    grDevices::pdf(file=glue::glue("{params$figures_path}/{population}_meta_clusters.pdf"))
     print(plot)
     grDevices::dev.off()}
   return(meta_clusters)
@@ -238,9 +241,10 @@ draw_meta_clusters <- function(meta_clusters, data.iteration) {
   #' @param meta_clusters a list where every element is a pool of cells.
   #' The elements are named lists, with five names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
-  #' @param data.iteration a named list, with three names: `expression`, `SeuratObject` and `ranking_of_genes`.
-  #' They correspond to the scRNA-seq expression matrix of a specific cell population,
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
+  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
   #' as well as the SeuratObject and the ranking of genes generated from this matrix.
+  #' The last element corresponds to the full scRNA-seq expression matrix.
   #'
   #' @return a plot.
   #'
@@ -255,8 +259,9 @@ draw_meta_clusters <- function(meta_clusters, data.iteration) {
   get_plot_coloring.cluster <- function(cluster) {
     plot_label <- glue::glue("{cluster$label} ({round(cluster$robustness, 2)})")
     stats::setNames(rep(plot_label, length(cluster$cells)), cluster$cells)}
-  plot_coloring <- unlist(sapply(X=meta_clusters, FUN=get_plot_coloring.cluster))
-  data.iteration$SeuratObject$meta_clusters <- as.factor(plot_coloring)
+  plot_coloring <- sapply(X=meta_clusters, FUN=get_plot_coloring.cluster)
+  plot_coloring <- unlist(unname(plot_coloring))
+  data.iteration$SeuratObject[["meta_clusters"]] <- as.factor(plot_coloring)
 
   plot <- SCpubr::do_DimPlot(data.iteration$SeuratObject, split.by="meta_clusters", legend.position="none")
   for (i in 1:length(plot)) {

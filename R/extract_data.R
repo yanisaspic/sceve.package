@@ -2,19 +2,6 @@
 
 	2025/01/16 @yanisaspic"
 
-get_pending_population <- function(records) {
-  #' Get a cell population for which no scEVE clustering iteration has been attempted.
-  #'
-  #' @param records a named list, with three data.frames: `cells`, `markers` and `meta`.
-  #'
-  #' @return a character.
-  #'
-  meta <- records$meta
-  pending_populations <- rownames(meta[meta$clustering_status=="PENDING", ])
-  population <- pending_populations[1]
-  return(population)
-}
-
 get_selected_genes.n_most_variable <- function(expression, params, n_genes=500) {
   #' Get the n most variable genes in a scRNA-seq dataset.
   #' The variable genes are identified by calling the function FindVariableFeatures() of Seurat.
@@ -151,9 +138,10 @@ extract_data <- function(population, expression.init, SeuratObject.init, records
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #' @param figures a boolean that indicates if figures should be drawn to explain the clustering iteration.
   #'
-  #' @return a named list, with three names: `expression`, `SeuratObject` and `ranking_of_genes`.
-  #' They correspond to the scRNA-seq expression matrix of a specific cell population,
+  #' @return a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
+  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
   #' as well as the SeuratObject and the ranking of genes generated from this matrix.
+  #' The last element corresponds to the full scRNA-seq expression matrix.
   #'
   #' @import Seurat
   #' @import glue
@@ -175,7 +163,8 @@ extract_data <- function(population, expression.init, SeuratObject.init, records
     ranking_of_genes.population <- get_ranking_of_genes(expression.population)
     data.iteration <- list(expression=expression.population,
                            SeuratObject=SeuratObject.population,
-                           ranking_of_genes=ranking_of_genes.population)
+                           ranking_of_genes=ranking_of_genes.population,
+                           expression.init=expression.init)
   }
   if (figures) {
     plot <- draw_extracted_data(population, SeuratObject.init, records)
