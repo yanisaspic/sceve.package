@@ -398,7 +398,7 @@ print(params$cluster_memberships_strategy)
 
 ### On-demand benchmark
 
-To investigate the impact of parameters' modifications on the clustering performance of the scEVE framework, a benchmark can be conducted by calling the function `get_benchmark.sceve()`.
+To investigate the impact of parameters' modifications on the clustering performance of the scEVE framework, a benchmark can be conducted by calling the function `get_benchmark_sceve()`.
 
 ```{r get_benchmark.sceve}
 params <- get_default_parameters()
@@ -407,9 +407,9 @@ params <- get_default_parameters()
 
 This benchmark returns six different metrics :
 
--   `time` and `peak_memory` measure the computational performance of the framework. They correspond to the time and the peak memory usage of the algorithm.
+-   `time` and `peak_memory_usage` measure the computational performance of the framework. They correspond to the time and the peak memory usage of the algorithm.
 -   `ARI` and `NMI` are extrinsic measurements of the clustering performance of the framework. They leverage the ground truth predicted by the authors of the datasets. Their value range from 0 to 1, and it is proportional to the similarity between the clusters predicted by the framework and the ground truth. They are calculated with the package `aricode` [@chiquet2024].
--   `purity` and `silhouette` are intrinsic measurements of the clustering performance of the framework. They leverage the gene expression of the cells. Their value range from 0 to 1, and it is proportional to the intra-cluster homogeneity and the inter-cluster dissimilarity. They are calculated with the package `bluster` [@lun2024].
+-   `neighbor_purity` and `silhouette` are intrinsic measurements of the clustering performance of the framework. They leverage the gene expression of the cells. Their value range from 0 to 1, and it is proportional to the intra-cluster homogeneity and the inter-cluster dissimilarity. They are calculated with the package `bluster` [@lun2024].
 
 A collection of datasets is available to evaluate the scEVE framework. They are listed in the function `get_datasets()`, and each individual dataset is loaded with the function `load_data()`. They correspond to scRNA-seq datasets of raw counts with more than a 100 cells available with the package `TMExplorer` [@christensen2022].
 
