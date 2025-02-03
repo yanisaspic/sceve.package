@@ -2,7 +2,7 @@
 % Please edit documentation in R/sceve.R
 \name{initialize_records}
 \alias{initialize_records}
-\title{Get a named list, with three data.frames: \code{cells}, \code{markers} and \code{meta}.
+\title{Get a named list, with four data.frames: \code{cells}, \code{markers}, \code{meta} and \code{methods}.
 \itemize{
 \item \code{cells} associates cells to their predicted populations.
 Its rows are cells, its columns are predicted populations, and cell memberships are reported in the table.
@@ -10,6 +10,8 @@ Its rows are cells, its columns are predicted populations, and cell memberships 
 Its rows are genes, its columns are predicted populations, and characterization powers are reported in the table.
 \item \code{meta} associates predicted populations to generic information, including:
 their \code{size}, their \code{robustness}, their \code{parent} and their \code{clustering_status}.
+\item \code{methods} associates predicted populations to the clustering methods leveraged to predict them.
+Its rows are clustering methods, its columns are predicted populations, and binary values are reported in the table.
 }}
 \usage{
 initialize_records(expression.init)
@@ -19,10 +21,10 @@ initialize_records(expression.init)
 Its rows are genes and its columns are cells.}
 }
 \value{
-a named list, with three data.frames: \code{cells}, \code{markers} and \code{meta}.
+a named list, with four data.frames: \code{cells}, \code{markers}, \code{meta} and \code{methods}.
 }
 \description{
-Get a named list, with three data.frames: \code{cells}, \code{markers} and \code{meta}.
+Get a named list, with four data.frames: \code{cells}, \code{markers}, \code{meta} and \code{methods}.
 \itemize{
 \item \code{cells} associates cells to their predicted populations.
 Its rows are cells, its columns are predicted populations, and cell memberships are reported in the table.
@@ -30,5 +32,7 @@ Its rows are cells, its columns are predicted populations, and cell memberships 
 Its rows are genes, its columns are predicted populations, and characterization powers are reported in the table.
 \item \code{meta} associates predicted populations to generic information, including:
 their \code{size}, their \code{robustness}, their \code{parent} and their \code{clustering_status}.
+\item \code{methods} associates predicted populations to the clustering methods leveraged to predict them.
+Its rows are clustering methods, its columns are predicted populations, and binary values are reported in the table.
 }
 }

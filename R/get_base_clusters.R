@@ -83,7 +83,7 @@ use_SHARP <- function(expression.population, params) {
   #' @export
   #'
   results <- SHARP::SHARP(scExp=expression.population, exp.type="count",
-                          n.cores = 1, rN.seed=params$random_state)
+                          n.cores = 2, rN.seed=params$random_state)
   predictions <- get_formatted_predictions(cells=colnames(expression.population),
                                            predictions=results$pred_clusters)
   return(predictions)
@@ -130,10 +130,9 @@ get_base_clusters.default_methods <- function(data.iteration, params,
                                               clustering_methods=c("densityCut", "monocle3", "Seurat", "SHARP")) {
   #' Apply multiple clustering methods on scRNA-seq data to predict base clusters.
   #'
-  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
-  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
-  #' as well as the SeuratObject and the ranking of genes generated from this matrix.
-  #' The last element corresponds to the full scRNA-seq expression matrix.
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `expression.init` and `ranking_of_genes.init`.
+  #' The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
+  #' The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #' @param clustering_methods a vector of valid clustering methods.
   #'
@@ -213,10 +212,9 @@ get_base_clusters <- function(population, data.iteration, params, figures) {
   #' Get base clusters predicted with multiple clustering methods.
   #'
   #' @param population a character. It corresponds to the cell population that scEVE will attempt to cluster.
-  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
-  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
-  #' as well as the SeuratObject and the ranking of genes generated from this matrix.
-  #' The last element corresponds to the full scRNA-seq expression matrix.
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `expression.init` and `ranking_of_genes.init`.
+  #' The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
+  #' The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #' @param figures a boolean that indicates if figures should be drawn to explain the clustering iteration.
   #'
@@ -230,8 +228,8 @@ get_base_clusters <- function(population, data.iteration, params, figures) {
   #'
   base_clusters <- get_base_clusters.default_methods(data.iteration, params)
   if (figures) {
-    plot <- draw_base_clusters(data.iteration$SeuratObject, base_clusters)
     grDevices::pdf(file=glue::glue("{params$figures_path}/{population}_base_clusters.pdf"))
+    plot <- draw_base_clusters(data.iteration$SeuratObject, base_clusters)
     print(plot)
     grDevices::dev.off()
   }

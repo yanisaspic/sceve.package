@@ -5,72 +5,44 @@
 get_default_parameters <- function() {
   #' Get the default parameters of the scEVE algorithm. These parameters are:
   #' `random_state` the integer seed used to have deterministic results.
+  #' `robustness_threshold` the threshold used to identify robust clusters.
   #' `figures_path` & `sheets_path` the default paths where figures and result sheets are stored, respectively.
-  #' `strategy` parameters, which are modular functions called at different points of the scEVE clustering analysis.
-  #'
-  #' - `selected_genes_strategy` a function called to select a limited pool of genes for a clustering iteration.
-  #' This function is called by `extract_data()`, and it expects two positional arguments: `expression` and `params`, respectively.
-  #' By default, the n most variable genes for a clustering iteration are selected, with n=500.
-  #' It outputs a vector of genes.
-  #'
-  #' - `base_clusters_strategy` a function called to predict base clusters with multiple clustering methods.
-  #' This function is called by `get_base_clusters()`, and it expects two positional arguments: `data.iteration` and `params`, respectively.
-  #' By default, four clustering methods are used: densityCut, monocle3, Seurat and SHARP.
-  #' It outputs a data.frame associating cells to their predicted clusters.
-  #' Its rows are cells, its columns are clustering methods, and predicted populations are reported in the table.
-  #'
-  #' - `robust_clusters_strategy` a function called to identify robust clusters from the similarity subgraphs.
-  #' This function is called by `get_meta_clusters()`, and it expects two positional arguments: `subgraphs` and `params`, respectively.
-  #' By default, a robustness threshold is used to filter out subgraphs, with threshold=0.33.
-  #' It outputs a list where every element is a pool of cells grouped together by multiple clustering methods.
-  #' The elements are named lists, with five names:
-  #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
-  #'
-  #' - `marker_genes_strategy` a function called to predict the marker genes of every meta-cluster.
-  #' This function is called by `get_characterized_clusters()`, and it expects three positional arguments: `meta_clusters`, `data.iteration` and `params`.
-  #' By default, an over-representation test is conducted on every cluster to identify genes that are
-  #' frequently expressed in it, but rarely expressed in the complete pool of cells.
-  #' It outputs a list where every element is a pool of cells.
-  #' The elements are named lists, with six names:
-  #' `base_clusters`, `cells`, `clustering_methods`, `label`, `markers` and `robustness`.
-  #'
-  #' - `characterized_clusters_strategy` a function called to identify characterized clusters.
-  #' This function is called by `get_characterized_clusters()`, and it expects two positional arguments: `meta_clusters` and `params`.
-  #' By default, a characterized cluster is a meta-cluster with at least 23 specific marker genes.
-  #' It outputs a list where every element is a pool of cells.
-  #' The elements are named lists, with seven names:
-  #' `base_clusters`, `cells`, `clustering_methods`, `label`, `markers`, `robustness` and `specific_markers`.
-  #'
-  #' - `cell_memberships_strategy` a function called to manage the cells in the leftover cluster of a clustering iteration.
-  #' This function is called by ``
+  #' `selected_genes_strategy` a function called to select a limited pool of genes for a clustering iteration.
+  #' `base_clusters_strategy` a function called to predict base clusters with multiple clustering methods.
+  #' `marker_genes_strategy` a function called to predict the marker genes of every meta-cluster.
+  #' `characterized_clusters_strategy` a function called to identify characterized clusters.
+  #' `cluster_memberships_strategy` a function called to quantify the
+  #' Detailed information regarding the strategy parameters are available in the vignette of the package.
   #'
   #' @return a list of parameters.
   #'
   #' @export
   #'
-  params <- list(random_state=0, figures_path="./scEVE/figures", sheets_path="./scEVE/records.xlsx",
-    selected_genes_strategy=get_selected_genes.n_most_variable,
-    base_clusters_strategy=get_base_clusters.default_methods,
-    robust_clusters_strategy=get_robust_clusters.robustness_threshold,
-    marker_genes_strategy=add_marker_genes.over_representation,
-    characterized_clusters_strategy=get_characterized_clusters.markers_threshold,
-    cell_memberships_strategy=get_cell_memberships.binary_membership)
+  params <- list(random_state=1, robustness_threshold=0.33,
+                 figures_path="./scEVE", sheets_path="./scEVE/records.xlsx",
+                 selected_genes_strategy=get_selected_genes.n_most_variable,
+                 base_clusters_strategy=get_base_clusters.default_methods,
+                 marker_genes_strategy=add_marker_genes.over_representation,
+                 characterized_clusters_strategy=get_characterized_clusters.markers_threshold,
+                 cluster_memberships_strategy=get_cluster_memberships.binary_membership)
   return(params)
 }
 
 initialize_records <- function(expression.init) {
-  #' Get a named list, with three data.frames: `cells`, `markers` and `meta`.
+  #' Get a named list, with four data.frames: `cells`, `markers`, `meta` and `methods`.
   #' - `cells` associates cells to their predicted populations.
   #' Its rows are cells, its columns are predicted populations, and cell memberships are reported in the table.
   #' - `markers` associates predicted populations to their marker genes.
   #' Its rows are genes, its columns are predicted populations, and characterization powers are reported in the table.
   #' - `meta` associates predicted populations to generic information, including:
   #' their `size`, their `robustness`, their `parent` and their `clustering_status`.
+  #' - `methods` associates predicted populations to the clustering methods leveraged to predict them.
+  #' Its rows are clustering methods, its columns are predicted populations, and binary values are reported in the table.
   #'
   #' @param expression.init a scRNA-seq dataset of raw count expression, without selected genes.
   #' Its rows are genes and its columns are cells.
   #'
-  #' @return a named list, with three data.frames: `cells`, `markers` and `meta`.
+  #' @return a named list, with four data.frames: `cells`, `markers`, `meta` and `methods`.
   #'
   #' @export
   #'
@@ -78,7 +50,8 @@ initialize_records <- function(expression.init) {
   markers <- data.frame(C=as.numeric(rep(0, nrow(expression.init))), row.names=rownames(expression.init))
   meta <- data.frame(size=as.numeric(ncol(expression.init)), robustness=0, parent=NA,
                      clustering_status="PENDING", row.names="C")
-  records <- list(cells=cells, markers=markers, meta=meta)
+  methods <- data.frame()
+  records <- list(cells=cells, markers=markers, meta=meta, methods=methods)
   return(records)
 }
 
@@ -112,7 +85,7 @@ get_SeuratObject.init <- function(expression.init, params) {
 get_pending_population <- function(records) {
   #' Get a cell population for which no scEVE clustering iteration has been attempted.
   #'
-  #' @param records a named list, with three data.frames: `cells`, `markers` and `meta`.
+  #' @param records a named list, with four data.frames: `cells`, `markers`, `meta` and `methods`.
   #'
   #' @return a character.
   #'
@@ -130,20 +103,26 @@ sceve.iteration <- function(population, expression.init, SeuratObject.init, reco
   #' Its rows are genes and its columns are cells.
   #' @param SeuratObject.init a SeuratObject generated from expression.init, on which
   #' the function RunUMAP() of Seurat has been applied already.
-  #' @param records a named list, with three data.frames: `cells`, `markers` and `meta`.
+  #' @param records a named list, with four data.frames: `cells`, `markers`, `meta` and `methods`.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #' @param figures a boolean that indicates if figures should be drawn to explain the clustering iteration.
   #' @param sheets a boolean that indicates if the results of the clustering iteration should be saved in Excel sheets.
   #'
-  #' @return a named list, with three data.frames: `cells`, `markers` and `meta`.
+  #' @param records a named list, with four data.frames: `cells`, `markers`, `meta` and `methods`.
   #'
   #' @import openxlsx
   #'
-  data.iteration <- extract_data(population, expression.init, SeuratObject.init, records, params, figures)
-  base_clusters <- get_base_clusters(population, data.iteration, params, figures)
-  meta_clusters <- get_meta_clusters(population, base_clusters, data.iteration, params, figures)
-  characterized_clusters <- get_characterized_clusters(population, meta_clusters, data.iteration, params, figures)
-  records <- report_iteration(population, characterized_clusters, data.iteration, records, params)
+  while(TRUE) {
+    data.iteration <- extract_data(population, expression.init, SeuratObject.init, records, params, figures)
+    if (length(data.iteration) == 0) {break()} # the cell population is too small
+    base_clusters <- get_base_clusters(population, data.iteration, params, figures)
+    meta_clusters <- get_meta_clusters(population, base_clusters, data.iteration, records, params, figures)
+    if (length(meta_clusters) == 1) {break()} # multiple sub-clusters are not predicted
+    characterized_clusters <- get_characterized_clusters(population, meta_clusters, data.iteration, params, figures)
+    if (length(characterized_clusters) == 0) {break()}  # the sub-clusters are homogenous
+    records <- report_iteration(population, characterized_clusters, data.iteration, records, params)
+    break()}
+  records$meta[population, "clustering_status"] <- "COMPLETE"
   if (sheets) {openxlsx::write.xlsx(records, params$sheets_path, rowNames=TRUE)}
   if (figures) {merge_drawings(population, params)}
   return(records)
@@ -159,7 +138,7 @@ sceve <- function(expression.init, params=get_default_parameters(), figures=TRUE
   #' @param sheets a boolean that indicates if the results of the clustering iteration should be saved in Excel sheets.
   #'
   #' @return a named list, with two elements: `records` and `labels`.
-  #' `records` is a named list, with three data.frames: `cells`, `markers` and `meta`.
+  #' `records` is a named list, with four data.frames: `cells`, `markers`, `meta` and `methods`.
   #' `labels` is a named factor associating cells to their predicted clusters.
   #'
   #' @import openxlsx
@@ -176,12 +155,11 @@ sceve <- function(expression.init, params=get_default_parameters(), figures=TRUE
   while (!is.na(population)) {
     records <- sceve.iteration(population, expression.init, SeuratObject.init,
                                records, params, figures, sheets)
-    records$meta[population, "clustering_status"] <- "COMPLETE"
     population <- get_pending_population(records)}
 
   gene_is_marker <- function(gene) {sum(gene) > 0}
   records$markers <- records$markers[apply(X=records$markers, MARGIN=1, FUN=gene_is_marker),]
-  if (sheets) {write.xlsx(records, params$sheets_path, rowNames=TRUE)}
+  if (sheets) {openxlsx::write.xlsx(records, params$sheets_path, rowNames=TRUE)}
   results <- list(records=records, labels=factor(get_leaf_clusters(records$cells)))
   return(results)
 }

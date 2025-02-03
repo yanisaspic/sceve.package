@@ -12,7 +12,7 @@ draw_extracted_data(population, SeuratObject.init, records)
 \item{SeuratObject.init}{a SeuratObject generated from expression.init, on which
 the function RunUMAP() of Seurat has been applied already.}
 
-\item{records}{a named list, with three data.frames: \code{cells}, \code{markers} and \code{meta}.}
+\item{records}{a named list, with four data.frames: \code{cells}, \code{markers}, \code{meta} and \code{methods}.}
 }
 \value{
 a plot.

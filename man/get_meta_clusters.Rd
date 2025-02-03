@@ -5,7 +5,14 @@
 \title{Extract robust clusters and a leftover cluster from a set of base clusters predicted
 with multiple clustering methods.}
 \usage{
-get_meta_clusters(population, base_clusters, data.iteration, params, figures)
+get_meta_clusters(
+  population,
+  base_clusters,
+  data.iteration,
+  records,
+  params,
+  figures
+)
 }
 \arguments{
 \item{population}{a character. It corresponds to the cell population that scEVE will attempt to cluster.}
@@ -13,10 +20,11 @@ get_meta_clusters(population, base_clusters, data.iteration, params, figures)
 \item{base_clusters}{a data.frame associating cells to their predicted clusters.
 Its rows are cells, its columns are clustering methods, and predicted populations are reported in the table.}
 
-\item{data.iteration}{a named list, with four names: \code{expression}, \code{SeuratObject}, \code{ranking_of_genes} and \code{expression.init}.
-The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
-as well as the SeuratObject and the ranking of genes generated from this matrix.
-The last element corresponds to the full scRNA-seq expression matrix.}
+\item{data.iteration}{a named list, with four names: \code{expression}, \code{SeuratObject}, \code{expression.init} and \code{ranking_of_genes.init}.
+The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
+The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.}
+
+\item{records}{a named list, with four data.frames: \code{cells}, \code{markers}, \code{meta} and \code{methods}.}
 
 \item{params}{a list of parameters (cf. \code{sceve::get_default_parameters()}).}
 

@@ -23,16 +23,13 @@ Its rows are genes and its columns are cells.}
 \item{SeuratObject.init}{a SeuratObject generated from expression.init, on which
 the function RunUMAP() of Seurat has been applied already.}
 
-\item{records}{a named list, with three data.frames: \code{cells}, \code{markers} and \code{meta}.}
+\item{records}{a named list, with four data.frames: \code{cells}, \code{markers}, \code{meta} and \code{methods}.}
 
 \item{params}{a list of parameters (cf. \code{sceve::get_default_parameters()}).}
 
 \item{figures}{a boolean that indicates if figures should be drawn to explain the clustering iteration.}
 
 \item{sheets}{a boolean that indicates if the results of the clustering iteration should be saved in Excel sheets.}
-}
-\value{
-a named list, with three data.frames: \code{cells}, \code{markers} and \code{meta}.
 }
 \description{
 Attempt to cluster a specific cell population using the scEVE algorithm.

@@ -16,8 +16,6 @@ get_transaction_database <- function(base_clusters) {
   #' @import rlang
   #' @import utils
   #'
-  #' @export
-  #'
   tmp <- rlang::hash(base_clusters) # use hash to prevent issues with parallel calculations.
   path <- glue::glue("./{tmp}.tmp")
   utils::write.table(base_clusters, file=path, col.names=FALSE, row.names=FALSE)
@@ -39,8 +37,6 @@ get_associations <- function(transaction_database) {
   #' @return a data.frame associating clusters `A` and `C` to their `confidence(A->C)`.
   #'
   #' @import arules
-  #'
-  #' @export
   #'
   data <- arules::apriori(transaction_database,
                           parameter = list(support=0.001, confidence=0.5, minlen=2, maxlen=2, target="rules"))
@@ -86,8 +82,6 @@ get_cells_of_subgraph <- function(subgraph, base_clusters) {
   #'
   #' @return a vector of cells.
   #'
-  #' @export
-  #'
   clusters_of_subgraph <- names(igraph::V(subgraph))
   cluster_is_in_subgraph <- function(cluster) {cluster %in% clusters_of_subgraph}
   data <- apply(X=base_clusters, MARGIN=c(1,2), FUN=cluster_is_in_subgraph)
@@ -112,8 +106,6 @@ get_subgraphs <- function(population, strong_similarities, base_clusters, params
   #'
   #' @import igraph
   #' @import glue
-  #'
-  #' @export
   #'
   data <- igraph::graph.data.frame(strong_similarities)
   subgraphs <- igraph::decompose.graph(data)
@@ -145,26 +137,6 @@ get_subgraphs <- function(population, strong_similarities, base_clusters, params
   return(subgraphs)
 }
 
-get_robust_clusters.robustness_threshold <- function(subgraphs, params, robustness_threshold=0.33) {
-  #' Apply a robustness threshold to identify robust clusters in a collection of subgraphs.
-  #'
-  #' @param subgraphs a list where every element is a pool of cells grouped together by multiple clustering methods.
-  #' The elements are named lists, with five names:
-  #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
-  #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
-  #' @param robustness_threshold a float.
-  #'
-  #' @return a list where every element is a pool of cells grouped together by multiple clustering methods.
-  #' The elements are named lists, with five names:
-  #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
-  #'
-  #' @export
-  #'
-  subgraph_is_robust <- function(subgraph) {subgraph$robustness > robustness_threshold}
-  subgraphs <- Filter(f=subgraph_is_robust, x=subgraphs)
-  return(subgraphs)
-}
-
 add_leftover_cluster <- function(population, robust_clusters, data.iteration) {
   #' Add a leftover cluster to the list of robust clusters.
   #' It corresponds to a group of cells unassigned to any robust cluster.
@@ -173,10 +145,9 @@ add_leftover_cluster <- function(population, robust_clusters, data.iteration) {
   #' @param robust_clusters a list where every element is a pool of cells grouped together by multiple clustering methods.
   #' The elements are named lists, with five names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
-  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
-  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
-  #' as well as the SeuratObject and the ranking of genes generated from this matrix.
-  #' The last element corresponds to the full scRNA-seq expression matrix.
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `expression.init` and `ranking_of_genes.init`.
+  #' The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
+  #' The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.
   #'
   #' @return a list where every element is a pool of cells.
   #' The elements are named lists, with five names:
@@ -195,17 +166,17 @@ add_leftover_cluster <- function(population, robust_clusters, data.iteration) {
   return(robust_clusters)
 }
 
-get_meta_clusters <- function(population, base_clusters, data.iteration, params, figures) {
+get_meta_clusters <- function(population, base_clusters, data.iteration, records, params, figures) {
   #' Extract robust clusters and a leftover cluster from a set of base clusters predicted
   #' with multiple clustering methods.
   #'
   #' @param population a character. It corresponds to the cell population that scEVE will attempt to cluster.
   #' @param base_clusters a data.frame associating cells to their predicted clusters.
   #' Its rows are cells, its columns are clustering methods, and predicted populations are reported in the table.
-  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
-  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
-  #' as well as the SeuratObject and the ranking of genes generated from this matrix.
-  #' The last element corresponds to the full scRNA-seq expression matrix.
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `expression.init` and `ranking_of_genes.init`.
+  #' The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
+  #' The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.
+  #' @param records a named list, with four data.frames: `cells`, `markers`, `meta` and `methods`.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #' @param figures a boolean that indicates if figures should be drawn to explain the clustering iteration.
   #'
@@ -223,7 +194,9 @@ get_meta_clusters <- function(population, base_clusters, data.iteration, params,
   associations <- get_associations(transaction_database)
   strong_similarities <- get_strong_similarities(associations)
   subgraphs <- get_subgraphs(population, strong_similarities, base_clusters, params)
-  robust_clusters <- params$robust_clusters_strategy(subgraphs, params)
+  robustness_threshold <- max(params$robustness_threshold, records$meta[population, "robustness"])
+  subgraph_is_robust_cluster <- function(subgraph) {subgraph$robustness > params$robustness_threshold}
+  robust_clusters <- Filter(f=subgraph_is_robust_cluster, x=subgraphs)
   meta_clusters <- add_leftover_cluster(population, robust_clusters, data.iteration)
   meta_clusters <- stats::setNames(meta_clusters, sapply(X=meta_clusters, FUN="[[", "label"))
 
@@ -241,10 +214,9 @@ draw_meta_clusters <- function(meta_clusters, data.iteration) {
   #' @param meta_clusters a list where every element is a pool of cells.
   #' The elements are named lists, with five names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
-  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
-  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
-  #' as well as the SeuratObject and the ranking of genes generated from this matrix.
-  #' The last element corresponds to the full scRNA-seq expression matrix.
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `expression.init` and `ranking_of_genes.init`.
+  #' The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
+  #' The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.
   #'
   #' @return a plot.
   #'

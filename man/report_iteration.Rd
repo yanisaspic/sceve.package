@@ -19,17 +19,16 @@ report_iteration(
 The elements are named lists, with seven names:
 \code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label}, \code{markers}, \code{robustness} and \code{specific_markers}.}
 
-\item{data.iteration}{a named list, with four names: \code{expression}, \code{SeuratObject}, \code{ranking_of_genes} and \code{expression.init}.
-The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
-as well as the SeuratObject and the ranking of genes generated from this matrix.
-The last element corresponds to the full scRNA-seq expression matrix.}
+\item{data.iteration}{a named list, with four names: \code{expression}, \code{SeuratObject}, \code{expression.init} and \code{ranking_of_genes.init}.
+The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
+The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.}
 
 \item{records}{a named list, with three data.frames: \code{cells}, \code{markers} and \code{meta}.}
 
 \item{params}{a list of parameters (cf. \code{sceve::get_default_parameters()}).}
 }
 \value{
-a named list, with three data.frames: \code{cells}, \code{markers} and \code{meta}.
+a named list, with four data.frames: \code{cells}, \code{markers}, \code{meta} and \code{methods}.
 }
 \description{
 Report multiple information regarding the characterized clusters predicted during a clustering iteration.

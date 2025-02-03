@@ -2,26 +2,19 @@
 % Please edit documentation in R/load_data.R
 \name{load_data}
 \alias{load_data}
-\title{Load the scRNA-seq dataset used for the vignette.
-It corresponds to tissues within and surrounding human glioblastoma tumors.
-c.f. 10.1016/j.celrep.2017.10.030
-Darmanis, Spyros, et al.
-"Single-cell RNA-seq analysis of infiltrating neoplastic cells at the migrating front
-of human glioblastoma."
-Cell reports 21.5 (2017): 1399-1410.}
+\title{Load a scRNA-seq dataset of raw count expression.}
 \usage{
-load_data()
+load_data(dataset)
+}
+\arguments{
+\item{dataset}{one of \code{Li_HumCRC_b}, \code{Darmanis_HumGBM}, \code{JerbyArnon_HumMLM},
+\code{Gillen_HumEPN}, \code{VanGalen_HumAML}, \code{Lambrechts_HumNSCLC} or \code{Peng_HumPDAC}.
+(cf. \code{sceve::get_datasets()})}
 }
 \value{
 a scRNA-seq dataset of raw count expression, without selected genes.
 Its rows are genes and its columns are cells.
 }
 \description{
-Load the scRNA-seq dataset used for the vignette.
-It corresponds to tissues within and surrounding human glioblastoma tumors.
-c.f. 10.1016/j.celrep.2017.10.030
-Darmanis, Spyros, et al.
-"Single-cell RNA-seq analysis of infiltrating neoplastic cells at the migrating front
-of human glioblastoma."
-Cell reports 21.5 (2017): 1399-1410.
+Load a scRNA-seq dataset of raw count expression.
 }

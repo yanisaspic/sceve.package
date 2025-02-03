@@ -7,7 +7,7 @@
 get_pending_population(records)
 }
 \arguments{
-\item{records}{a named list, with three data.frames: \code{cells}, \code{markers} and \code{meta}.}
+\item{records}{a named list, with four data.frames: \code{cells}, \code{markers}, \code{meta} and \code{methods}.}
 }
 \value{
 a character.

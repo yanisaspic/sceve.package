@@ -1,0 +1,425 @@
+---
+title: "Overview of the scEVE framework"
+author: "Asloudj Yanis"
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Overview of the scEVE framework}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: references.bib
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+# scEVE framework tutorial
+
+In this tutorial, we will use the scEVE ensemble clustering framework to analyse a public human glioblastoma scRNA-seq dataset.
+
+### Setup the library
+
+The scEVE framework uses R packages from multiple repositories (e.g. CRAN, Bioconductor, Github). The exhaustive list of dependencies, as well as the dependency versions used for this tutorial, is available at the bottom of this overview, in the final section **Session information**.
+
+```{r library}
+library(sceve)
+```
+
+### Load the dataset
+
+The data used in this vignette was published by Darmanis *et al.* [@darmanis2017]. The dataset contains 3,589 cells extracted from the core and the peripheral tissues of human glioblastoma tumors. These cells were sequenced with a SMART-Seq2 protocol, and the expression of up to 23,459 genes was measured. After analyzing the data, Darmanis *et al.* were able to identify 7 unique cell types: astrocytes, immune cells, neoplastic cells, neurons, oligodendrocytes, vascular cells and OPCs (oligodendrocyte precursor cells).
+
+```{r dataset}
+Darmanis_HumGBM <- load_data("Darmanis_HumGBM")
+expression.init <- Darmanis_HumGBM$expression.init
+ground_truth <- Darmanis_HumGBM$ground_truth
+dim(expression.init)
+unique(ground_truth)
+```
+
+The loaded `Darmanis_HumGBM` data include the scRNA-seq expression matrix `expression.init`, and the cell types identified by Darmanis *et al.* `ground_truth`.
+
+The rows of the expression matrix represent genes, and its columns represent cells. The raw counts measured are directly reported in the matrix. The scEVE framework should be applied on similarly formatted raw count matrices. **Note** that these matrices should also include **more than a 100 cells**; otherwise, the framework won't attempt to divide them.
+
+### Conduct a full scEVE clustering analysis
+
+The scEVE framework is directly applied on the dataset by calling the function `sceve()`.
+
+```{r run}
+results <- sceve(expression.init)
+```
+
+The results of the `sceve()` function is a list with two elements: `records` and `labels`.
+
+`records` is a named list, with four data.frames: `cells`, `markers`, `meta` and `methods`:
+
+-   `cells` associates the cells of the dataset to clusters at multiple resolutions.
+
+-   `markers` associates clusters to their marker genes.
+
+-   `meta` associates clusters to their robustness, as well as other generic information.
+
+-   `methods` associates clusters to the clustering methods used to predict them.
+
+```{r records$cells}
+head(results$records$cells, 100)
+```
+
+By looking at `records$cells`, we see that every cell belongs to the cluster `C` (indicated by the value `1`). By conducting successive clustering iterations, the scEVE framework assign cells to smaller sub-clusters progressively. For instance, most of the astrocyte cells are grouped together in the cluster `C.5.2.1`, which is a sub-part of the clusters `C.5.2` and `C.5`. We can also see that most of the immune cells are grouped in the cluster `C.4`.
+
+```{r records$markers}
+head(results$records$markers, 100)
+```
+
+Looking at `records$markers`, we can identify marker genes for each predicted clusters. These marker genes are identified with an over-representation test, and the values reported in the table correspond to negative log10-transformed p-values. **Note** that because there is no infinity in spreadsheets, **marker genes with a p-value of 0 (e.g. `A2M` for the cluster `C.4`) are indicated by `#NUM!` in a spreadsheet**.
+
+```{r records$meta}
+results$records$meta
+```
+
+`records$meta` indicate the size, the robustness as well as the parent population of every predicted cluster. Clusters with a robustness superior to 0 are **robust clusters** (*i.e.* clusters predicted by multiple methods), whereas clusters with a robustness of 0 are **leftover clusters** (*i.e* cells unassigned to robust clusters).
+
+```{r records$methods}
+results$records$methods
+```
+
+The table `records$methods` is used to explain which clustering methods contributed to the prediction of a robust cluster. Here for instance, we can see that `densityCut` [@ding2016], `monocle3` [@cao2019] and `Seurat` [@hao2021] all predicted the cluster `C.1`, composed of oligodendrocyte cells. The cluster `C.5.2.1`, composed of astrocyte cells, was predicted by `densityCut` [@ding2016], `Seurat` [@hao2021] and `SHARP` [@wan2020].
+
+```{r labels}
+set.seed(1)
+sample(results$labels, size=10)
+```
+
+`labels` corresponds to the most informative cluster labels (*i.e.* the ones with the highest resolution) predicted by scEVE for every cell in the dataset. Basically, the type of output you would get from using any clustering method.
+
+We can see that the cell `Immune cell_1834` was assigned to the cluster `C.4`, whereas the cell `Neoplastic_233` was assigned to the cluster `C.5.2.2`.
+
+### Parameters of a scEVE clustering analysis
+
+The function `sceve()` has 3 supplementary arguments:
+
+-   `figures` is a boolean that indicates if figures should be drawn and saved to explain the clustering iterations.
+
+-   `sheets` is a boolean that indicates if the results of the scEVE clustering analysis should be saved in an Excel sheet.
+
+-   `params` is a named list of parameters required for the scEVE clustering analysis.
+
+By default, the function `get_default_parameters()` is called to to set the list of parameters of the analysis.
+
+```{r parameters}
+params <- get_default_parameters()
+names(params)
+```
+
+These parameters include:
+
+-   `random_state`, the integer seed used to have deterministic results.
+
+-   `robustness_threshold`, the threshold used to identify robust clusters.
+
+-   `figures_path` & `sheets_path`, the default paths where figures and result sheets are stored, respectively.
+
+-   `selected_genes_strategy`, `base_clusters_strategy`, `marker_genes_strategy`, `characterized_clusters_strategy` and `cluster_memberships_strategy`, which are modular functions called by the scEVE framework. These parameters are mostly aimed at developers. They are briefly mentioned when relevant in the following section **Focus on a single clustering iteration of scEVE.** They are extensively presented in the penultimate section **Open framework for developers**.
+
+# Focus on a single clustering iteration of scEVE
+
+The scEVE clustering framework automatically conducts multiple clustering iterations. To better understand this framework, we will conduct a single clustering iteration manually, and we will detail it. Darmanis' dataset will be used here too.
+
+First, we need to define some supplementary variables. They are defined prior to the first clustering iteration, when `sceve()` is called.
+
+```{r init}
+population <- "C"
+records <- initialize_records(expression.init)
+SeuratObject.init <- get_SeuratObject.init(expression.init, params)
+```
+
+`SeuratObject.init` will be used to draw some figures during the clustering analysis, and `population` is used to indicate which pool of cells scEVE should attempt to divide during its clustering iteration. The first iteration is always conducted on the the population `C`, which corresponds to all the cells of the dataset. **Note** that `records` is the variable used to **store the results of each clustering iterations**; it is initialized at the start of the framework, and is enriched progressively.
+
+### Overview of a clustering iteration
+
+A single clustering iteration with the scEVE framework is composed of four consecutive steps:
+
+1.  the **data extraction**, where a subset of the scRNA-seq dataset is extracted. scEVE will attempt to divide this subset of cells during the clustering iteration.
+
+2.  the **prediction of base clusters**, where multiple clustering methods are applied on the extracted data.
+
+3.  the **identification of meta-clusters**, where robust clusters (*i.e.* subsets of cells grouped together by multiple methods), and a leftover cluster, are identified.
+
+4.  the **biological characterization of the meta-clusters**, where scEVE attempts to characterize meta-clusters by identifying marker genes.
+
+After these four steps, the results of the clustering iteration are reported to the variable `records`.
+
+We will detail each step of a clustering iteration below.
+
+### Data extraction
+
+The scEVE framework conducts successive clustering iterations. At each iteration, a different pool of cells will be clustered. For the first iteration, this pool of cells corresponds to the population `C`, *i.e.* the entire scRNA-seq dataset. In the following iterations, the pools of cells will correspond to meta-clusters predicted at a previous iteration (*e.g.* population `C.1`).
+
+For each pool of cells, a limited set of genes is selected. By default, the 500 most variable genes in the dataset are selected.\
+*The function defined in `params$selected_genes_strategy` is called to select the genes.*
+
+The function `extract_data()` is called to extract a specific pool of cells, as well as their selected genes.
+
+```{r extract_data}
+data.iteration <- extract_data(population, expression.init, SeuratObject.init, records, params, figures=FALSE)
+dim(expression.init)
+dim(data.iteration$expression)
+```
+
+By default, when `extract_data()` is called, a figure representing the pool of cells selected for the clustering iteration is drawn and saved to `params$figures_path`. Here, because we have set `figures=FALSE`, the figure was not drawn. We will draw it directly by calling `draw_extracted_data()`.
+
+```{r draw_extracted_data}
+draw_extracted_data(population, SeuratObject.init=SeuratObject.init, records=records)
+```
+
+The resulting figure is a U-MAP plot drawn with `SCpubr` [@blanco-carmona2022], where every cell selected for the clustering iteration is darkened. Briefly, a U-MAP plot is a projection of cells into blobs, on a 2D plan. Here, all the blobs are darkened, because every cell was selected for the clustering iteration (population `C`). To better showcase how this figure should be used, we will call `draw_extracted_data()` on a different clustering iteration, later.
+
+As a result of the **data extraction** step, a pool of cells with a selected set of genes is extracted, and multiple clustering methods can be applied on this subset of data.
+
+### Prediction of base clusters
+
+To predict base clusters, the scEVE framework applies multiple clustering methods on the same subset of data. By default, these methods are `densityCut` [@ding2016], `monocle3` [@cao2019], `Seurat` [@hao2021] and `SHARP` [@wan2020]. *The function defined in `params$base_clusters_strategy` is called to apply multiple clustering methods.*
+
+The function `get_base_clusters()` is called to predict base clusters in a subset of cells.
+
+```{r get_base_clusters}
+base_clusters <- get_base_clusters(population, data.iteration, params, figures=FALSE)
+head(base_clusters)
+```
+
+We see that different clustering methods yield different clustering results. Here for instance, we see that Seurat has grouped the cells `Neoplastic_1` and `Neoplastic_2` separately from the cells `Neoplastic_3`, `Neoplastic_4`\` and `Neoplastic_5`, whereas monocle3 has grouped them together.
+
+To better explore these independent clustering results, a figure representing the base clusters is drawn and saved to `params$figures_path`. Here, because we have set `figures=FALSE`, the figure was not drawn. We will draw it directly by calling `draw_base_clusters()`.
+
+```{r draw_base_clusters}
+p <- draw_base_clusters(data.iteration$SeuratObject, base_clusters)
+```
+
+The comparison of these U-MAP plots drawn with `SCpubr` [@blanco-carmona2022] reveals the striking differences between clustering results, with regards to the number of clusters, as well as their respective boundaries.
+
+**Note** that for each clustering iteration, because the pool of genes exploited to draw the figures vary, the cell projections on these U-MAP plots can differ from the ones generated with `draw_extracted_data()`.
+
+Following the **prediction of base clusters** with multiple methods, the scEVE framework will identify **robust clusters**, *i.e.* subsets of cells grouped together by multiple methods.
+
+### Identification of meta-clusters
+
+The scEVE framework quantifies the similarity of every pair of predicted clusters, according to the cells grouped in both clusters. From these similarities, we define strongly similar clusters as clusters that share the majority of their cells, and we draw a graph where every node is a cluster, and every edge connects two strongly similar clusters. The edges are weighted according to the similarity measured.
+
+**Note** that the frequent itemset mining framework is used to quantify the pairwise similarities between base clusters.
+
+The drawn graph is disjoint, and every sub-graph (*i.e.* every connected component) indicates that a subset of cells has been grouped together by multiple clustering methods.The sub-graphs can have multiple structures ; for instance, if every method were to predict the exact same cluster, the resulting sub-graph would be a dense graph, where every edge is weighted 1.
+
+By comparing the structure of each sub-graph to this theoretical structure, the robustness of a cluster can be quantified (from 0 to 1). Any sub-graph with a robustness inferior to a threshold value is filtered out. This value is set to `params$robustness_threshold`, and it defaults to 0.33.
+
+For each remaining sub-graph, cells at the intersection of every base cluster will be assigned together in a robust cluster. The remaining unassigned cells will be grouped together in a **leftover cluster**. Both the robust clusters and the leftover cluster are **meta-clusters**.
+
+We can retrieve them by calling the function `get_meta_clusters()`.
+
+```{r get_meta_clusters}
+meta_clusters <- get_meta_clusters(population, base_clusters, data.iteration, records, params, figures=FALSE)
+print(meta_clusters[[1]])
+```
+
+Meta-clusters are sorted by decreasing robustness. Here, our most robust cluster is composed of 80 oligodendrocyte cells, grouped together by three different clustering methods: densityCut, monocle3 and Seurat. We label this meta-cluster `C.1`: it is the 1st most robust cluster predicted from the population `C`. The second most robust cluster will be labeled `C.2`, the third `C.3`, etc.
+
+The last meta-cluster is the leftover cluster, and its robustness is null. In this iteration, up to 1286 cells were grouped in the leftover cluster.
+
+```{r C.leftovers}
+n_meta_clusters <- length(meta_clusters)
+leftover_cluster <- meta_clusters[[n_meta_clusters]]
+print(leftover_cluster$robustness)
+print(length(leftover_cluster$cells))
+```
+
+Normally, a figure representing the meta-clusters is drawn and saved to `params$figures_path`. Here, because we have set `figures=FALSE`, the figure was not drawn. We will draw it directly by calling `draw_meta_clusters()`.
+
+```{r draw_meta_clusters}
+p <- draw_meta_clusters(meta_clusters, data.iteration)
+p
+```
+
+The composite U-MAP plots drawn with `SCpubr` [@blanco-carmona2022] show the meta-clusters predicted, as well as their respective robustness. For instance, `C.1` has a robustness of 0.49, and its cells are projected in the bottom-left red blob. The last meta-cluster `C.5` has a robustness of 0: it corresponds to the leftover cluster. The top-left combined U-MAP plots integrates every meta-cluster. **Note** that some meta-clusters can be missing from the combined plot (*e.g.* `C.5`) due to plotting overlaps.
+
+After the **identification of meta-clusters**, the scEVE framework will attempt to characterize them.
+
+### Biological characterization of the meta-clusters
+
+In order to facilitate the biological analysis of clusters, scEVE predicts marker genes for each meta-cluster. By default, an over-representation test is conducted on each cluster to identify genes that are frequently expressed in a cluster, but rarely expressed in the whole dataset.\
+*The function defined in `params$marker_genes_strategy` is called to predict marker genes in every meta-cluster.*
+
+After identifying marker genes in each meta-cluster, the scEVE framework will attempt to detect **characterized clusters**. By default, characterized clusters are defined as meta-clusters with 22 or more marker genes. If every meta-cluster is characterized, scEVE will report them all. However, if any meta-cluster is insufficiently characterized, none will be reported, so as to prevent over-clustering.\
+*The function defined in `params$characterized_clusters_strategy` is called to define which meta-clusters are sufficiently characterized, and to output them.*
+
+The detection of marker genes, and the subsequent identification of characterized clusters, are both conducted by calling the function `get_characterized_clusters()`.
+
+```{r get_characterized_clusters}
+characterized_clusters <- get_characterized_clusters(population, meta_clusters, data.iteration, params, figures=FALSE)
+print(characterized_clusters[[4]]$markers)
+print(length(characterized_clusters[[4]]$specific_markers))
+```
+
+Here, we can see every marker gene predicted for the meta-cluster `C.2`, as well as their negative log10-transformed p-values. We can also see that the meta-cluster `C.4` has 72 specific marker genes. **Note** that because there is no infinity in spreadsheets, **marker genes with a p-value of 0 (e.g. `A2M`) are indicated by `#NUM!` in a spreadsheet**.
+
+To summarize this information, a figure representing the marker genes predicted in each meta-cluster is drawn in `params$figures_path`. Here, because we have set `figures=FALSE`, the figure was not drawn. We will draw it directly by calling `draw_marker_genes()`.
+
+```{r draw_marker_genes}
+p <- draw_marker_genes(characterized_clusters)
+p
+```
+
+The resulting upset-plot drawn with ggVennDiagram [@gao2021; @gao2024] is divided into a left and a right component. On the left, a bar-plot indicates the number of marker genes predicted in each cluster. By exploiting the bar-plot, we see that `C.1` has 125 marker genes, whereas the leftover cluster `C.5` has more than 200 marker genes. On the right, a bar-plot and a grid-plot report the distribution of marker genes across clusters. For instance, the first bar of the plot is associated to a single `C.1` dot on the grid. By leveraging both plots, we can learn that the cluster `C.1` has 41 specific markers. The sixth bar, which is associated to a `C.1` and a `C.2` on the grid, inform us that the 25 marker genes are shared by the two clusters, exclusively.
+
+**Note** that the function `draw_marker_genes()` was called on the characterized clusters for convenience. Normally, the marker genes of every meta-clusters are reported, regardless of them being sufficiently characterized or not.
+
+The **biological characterization of the meta-clusters** is the last step of the clustering iteration.
+
+### End of a clustering iteration
+
+#### Results' report
+
+As a result of this last step, either (1) all meta-clusters were characterized, and are stored in `characterized_clusters`, or (2) some of them were not, and none are stored in `characterized_clusters`.
+
+-   In the first case, the scEVE framework was able to sub-divide a pool of cell into multiple homogeneous clusters. Consequently, it will automatically conduct novel and independent clustering iterations to further sub-divide these predicted clusters. **Note** that for each of these clustering iterations, **the robustness threshold used to identify robust clusters will be updated**, so that sub-clusters are predicted if, and only if, they are more robust than their parent cluster.
+
+-   In the second case, the scEVE framework was unable to sub-divide a pool of cells into multiple homogeneous clusters, and it will consider that the cell population as a whole is homogeneous, so as to prevent over-clustering.
+
+In any case, the information stored in `characterized_clusters` (*i.e.* the cell clusters predicted, their robustness as well as their marker genes) is reported in the variable `records`. By default, the cell clusters predicted are reported in a binary matrix, so that the value *i,j* is 1 if the cell *i* belongs to the cluster *j*, or 0 otherwise. *The function defined in `params$cluster_memberships_strategy` is called to report the cell memberships in every meta-cluster.*
+
+This process is conducted by calling the function `report_iteration()`.
+
+```{r report_iteration}
+records <- report_iteration(population, characterized_clusters, data.iteration, records, params)
+```
+
+At every iteration, the contents of the variable `records` are saved to an .xlsx file, in `params$sheets_path`. The informative figures generated during the iteration are merged together in a single .pdf file named after the cell population clustered (*e.g.* `C.pdf`) and saved in `params$figures_path`.
+
+Finally, after reporting the results of the clustering analysis, the `clusering_status` of the investigated cell population (in `records$meta`) is updated from `PENDING` to `DONE`.
+
+#### Next iteration
+
+We can see below a sub-population predicted at the previous clustering iteration.
+
+```{r next_iteration}
+draw_extracted_data(population="C.4", SeuratObject.init=SeuratObject.init, records=records)
+```
+
+Here, unlike the first time we ran `draw_extracted_data()`, only a subset of cells is darkened. They correspond to the cells in the population `C.4`, and scEVE will attempt to sub-divide them with this new clustering iteration. Because `C.4` had a robustness of 0.37, in this new iteration, robust clusters will correspond to meta-clusters with a robustness greater than 0.37.
+
+Eventually, scEVE won't be able to identify robust clusters, and the `clustering_status` of every predicted population will be set to `DONE`. At this point, the clustering analysis is over, and results with multiple cell resolutions and explicit robustness values will be generated.
+
+# Open framework for developers
+
+The scEVE framework is a modular framework: it allows developers to customize their clustering analyses. In the previous section, we have presented a clustering iteration with its default parameters. However, the functions called to conduct the clustering iteration can be changed easily. To do that, we just need to change `_strategy` parameters in the variable `params`.
+
+```{r params}
+names(params)
+```
+
+In this section, we present each `_strategy` parameter, with its expected inputs and output. We also illustrate how different thresholds or functions can be implemented in the framework, in the subsection **selected_genes_strategy**.
+
+### selected_genes_strategy
+
+This parameter expects a function that selects a limited pool of genes for a clustering iteration. It is called by `extract_data()`, and it expects two positional arguments: `expression` and `params`, respectively. It outputs a vector of genes.
+
+By default, it is set to `get_selected_genes.n_variable_genes`, and the n most variable genes are selected, with n=500.
+
+```{r params$selected_genes_strategy}
+print(params$selected_genes_strategy)
+```
+
+We see that `n_genes=500`, but we can easily select a different number of variable genes by defining a novel function and setting it to `params$selected_genes_strategy`.
+
+```{r extract_data bis}
+f <- function(expression, params) {get_selected_genes.n_most_variable(expression, params, n_genes=2000)}
+params$selected_genes_strategy <- f
+tmp <- extract_data(population="C", expression.init, SeuratObject.init, records, params, figures=FALSE)
+dim(tmp$expression)
+```
+
+Because we have modified the function set to `params$selected_genes_strategy`, the datasets extracted at each iteration of the analysis will now include 2,000 selected genes.
+
+Instead of modifying the variable genes threshold, we can also set a completely different function. In fact, **any function with the same inputs and output** as the one described, can be set to `params$selected_genes_strategy`. **This property is true for every function set to a `_strategy` parameter**.
+
+We illustrate this property by defining a new function that selects 1,000 genes completely randomly, and we set it to `params$selected_genes_strategy`.
+
+```{r data.iteration ter}
+set.seed(1)
+g <- function(expression, params) {sample(rownames(expression.init), size=1000)}
+params$selected_genes_strategy <- g
+tmp <- extract_data(population="C", expression.init, SeuratObject.init, records, params, figures=FALSE)
+dim(tmp$expression)
+```
+
+### base_clusters_strategy
+
+This parameter expects a function called to predict base clusters with multiple clustering methods. It is called by `get_base_clusters()`, and it expects two positional arguments: `data.iteration` and `params`, respectively. It outputs a data.frame associating cells to their predicted clusters; its rows are cells, its columns are clustering methods, and predicted populations are reported in the table.
+
+By default, it is set to `get_base_clusters.default_methods`, and four clustering methods are used: densityCut, monocle3, Seurat and SHARP.
+
+```{r params$base_clusters_strategy}
+print(params$base_clusters_strategy)
+```
+
+### marker_genes_strategy
+
+This parameter expects a function called to predict the marker genes of every meta-cluster. It is called by `get_characterized_clusters()`, and it expects three positional arguments: `meta_clusters`, `data.iteration` and `params`, respectively. It outputs a list where every element is a pool of cells. The elements are named lists, with six names: `base_clusters`, `cells`, `clustering_methods`, `label`, `markers` and `robustness`.
+
+By default, it is set to `add_marker_genes.over_representation`, and an over-representation test is conducted on every cluster to identify genes that are frequently expressed in it, but rarely expressed in the complete pool of cells.
+
+```{r params$marker_genes_strategy}
+print(params$marker_genes_strategy)
+```
+
+### characterized_clusters_strategy
+
+This parameter expects a function called to identify characterized clusters. It is called by `get_characterized_clusters()`, and it expects two positional arguments: `meta_clusters` and `params`, respectively. It outputs a list where every element is a pool of cells. The elements are named lists, with seven names: `base_clusters`, `cells`, `clustering_methods`, `label`, `markers`, `robustness` and `specific_markers`.
+
+By default, it is set to `get_characterized_clusters.markers_threshold`, and a marker genes threshold is used to identify characterized clusters, with threshold=22. Then, if every meta-cluster is characterized, it returns them all. Otherwise, it returns none of them.
+
+```{r params$characterized_clusters_strategy}
+print(params$characterized_clusters_strategy)
+```
+
+### cluster_memberships_strategy
+
+This parameter expects a function called to report the cluster memberships of every cell. It is called by `report_iteration()`, and it expects three positional arguments: `characterized_clusters`, `data.iteration` and `params`, respectively. It outputs a data.frame associating cells to their predicted clusters. Its rows are cells, its columns are characterized clusters, and cell memberships are reported in the table.
+
+By default, it is set to `get_cluster_memberships.binary_membership`, and the cell clusters predicted are reported in a binary matrix, so that the value *i,j* is 1 if the cell *i* belongs to the cluster *j*, or 0 otherwise.
+
+```{r params$cluster_memberships_strategy}
+print(params$cluster_memberships_strategy)
+```
+
+### On-demand benchmark
+
+To investigate the impact of parameters' modifications on the clustering performance of the scEVE framework, a benchmark can be conducted by calling the function `get_benchmark.sceve()`.
+
+```{r get_benchmark.sceve}
+params <- get_default_parameters()
+# get_benchmark_sceve(expression.init, params)
+```
+
+This benchmark returns six different metrics :
+
+-   `time` and `peak_memory` measure the computational performance of the framework. They correspond to the time and the peak memory usage of the algorithm.
+-   `ARI` and `NMI` are extrinsic measurements of the clustering performance of the framework. They leverage the ground truth predicted by the authors of the datasets. Their value range from 0 to 1, and it is proportional to the similarity between the clusters predicted by the framework and the ground truth. They are calculated with the package `aricode` [@chiquet2024].
+-   `purity` and `silhouette` are intrinsic measurements of the clustering performance of the framework. They leverage the gene expression of the cells. Their value range from 0 to 1, and it is proportional to the intra-cluster homogeneity and the inter-cluster dissimilarity. They are calculated with the package `bluster` [@lun2024].
+
+A collection of datasets is available to evaluate the scEVE framework. They are listed in the function `get_datasets()`, and each individual dataset is loaded with the function `load_data()`. They correspond to scRNA-seq datasets of raw counts with more than a 100 cells available with the package `TMExplorer` [@christensen2022].
+
+```{r get_datasets}
+get_datasets()
+```
+
+# Session information
+
+```{r sessioninfo}
+library(sessioninfo)
+sessioninfo::session_info()
+```

@@ -13,7 +13,7 @@ report_metadata(population, characterized_clusters, records)
 The elements are named lists, with seven names:
 \code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label}, \code{markers}, \code{robustness} and \code{specific_markers}.}
 
-\item{records}{a named list, with three data.frames: \code{cells}, \code{markers} and \code{meta}.}
+\item{records}{a named list, with four data.frames: \code{cells}, \code{markers}, \code{meta} and \code{methods}.}
 }
 \value{
 a data.frame associating predicted populations to generic information, including:

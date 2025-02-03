@@ -23,7 +23,7 @@ Its rows are genes and its columns are cells.}
 }
 \value{
 a named list, with two elements: \code{records} and \code{labels}.
-\code{records} is a named list, with three data.frames: \code{cells}, \code{markers} and \code{meta}.
+\code{records} is a named list, with four data.frames: \code{cells}, \code{markers}, \code{meta} and \code{methods}.
 \code{labels} is a named factor associating cells to their predicted clusters.
 }
 \description{

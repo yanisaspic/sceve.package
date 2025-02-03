@@ -28,10 +28,9 @@ add_marker_genes.over_representation <- function(meta_clusters, data.iteration, 
   #' @param meta_clusters a list where every element is a pool of cells.
   #' The elements are named lists, with five names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
-  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
-  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
-  #' as well as the SeuratObject and the ranking of genes generated from this matrix.
-  #' The last element corresponds to the full scRNA-seq expression matrix.
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `expression.init` and `ranking_of_genes.init`.
+  #' The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
+  #' The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #' @param pvalue_threshold the pvalue threshold below which genes are considered as marker genes.
   #'
@@ -43,16 +42,16 @@ add_marker_genes.over_representation <- function(meta_clusters, data.iteration, 
   #'
   #' @export
   #'
-  cells_in_iteration <- ncol(data.iteration$ranking_of_genes)
-  occurrences_of_genes.iteration <- table(data.iteration$ranking_of_genes)
+  cells_in_dataset <- ncol(data.iteration$expression.init)
+  occurrences_of_genes.dataset <- table(data.iteration$ranking_of_genes.init)
 
   get_marker_genes.over_representation.cluster <- function(cluster) {
     cells_in_cluster <- length(cluster$cells)
-    occurrences_of_genes.cluster <- table(data.iteration$ranking_of_genes[, cluster$cells])
+    occurrences_of_genes.cluster <- table(data.iteration$ranking_of_genes.init[, cluster$cells])
 
     test_over_representation.gene <- function(gene) {
       test_over_representation(occurrences_of_genes.cluster[gene], cells_in_cluster,
-                               occurrences_of_genes.iteration[gene], cells_in_iteration)}
+                               occurrences_of_genes.dataset[gene], cells_in_dataset)}
 
     pvalues <- sapply(X=names(occurrences_of_genes.cluster), FUN=test_over_representation.gene, USE.NAMES=FALSE)
     adjusted_pvalues <- stats::p.adjust(pvalues, method="BH")
@@ -118,10 +117,9 @@ get_characterized_clusters <- function(population, meta_clusters, data.iteration
   #' @param meta_clusters a list where every element is a pool of cells.
   #' The elements are named lists, with five names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
-  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `ranking_of_genes` and `expression.init`.
-  #' The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
-  #' as well as the SeuratObject and the ranking of genes generated from this matrix.
-  #' The last element corresponds to the full scRNA-seq expression matrix.
+  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `expression.init` and `ranking_of_genes.init`.
+  #' The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
+  #' The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #' @param figures a boolean that indicates if figures should be drawn to explain the clustering iteration.
   #'

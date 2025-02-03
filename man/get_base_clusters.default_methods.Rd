@@ -11,10 +11,9 @@ get_base_clusters.default_methods(
 )
 }
 \arguments{
-\item{data.iteration}{a named list, with four names: \code{expression}, \code{SeuratObject}, \code{ranking_of_genes} and \code{expression.init}.
-The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
-as well as the SeuratObject and the ranking of genes generated from this matrix.
-The last element corresponds to the full scRNA-seq expression matrix.}
+\item{data.iteration}{a named list, with four names: \code{expression}, \code{SeuratObject}, \code{expression.init} and \code{ranking_of_genes.init}.
+The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
+The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.}
 
 \item{params}{a list of parameters (cf. \code{sceve::get_default_parameters()}).}
 

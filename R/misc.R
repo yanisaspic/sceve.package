@@ -110,7 +110,7 @@ get_records <- function(sheets_path) {
   #'
   #' @param sheets_path a path where result sheets are stored.
   #'
-  #' @return a named list, with three data.frames: `cells`, `markers` and `meta`.
+  #' @return a named list, with four data.frames: `cells`, `markers`, `meta` and `methods`.
   #'
   #' @import openxlsx
   #'
@@ -140,14 +140,16 @@ get_leaf_clusters <- function(records.cells) {
     get_labels.population <- function(population) {
       cells_of_population <- get_cells_of_population(population, records.cells)
       labels.population <- stats::setNames(rep(population, length(cells_of_population)), cells_of_population)
-      return(labels)}
+      return(labels.population)}
     labels.resolution <- sapply(X=populations_at_resolution, FUN=get_labels.population)
+    labels.resolution <- unlist(unname(labels.resolution))
     return(labels.resolution)
   }
 
   # get the labels of every cell with a bottom-up approach, where cell labels are successively added
   # from the maximum resolution to the minimal one (i.e. the label 'C').
-  labels <- sapply(X=get_maximum_resolution(records.cells):1, FUN=get_labels.resolution)
+  labels <- sapply(X=get_maximum_resolution(records.cells):2, FUN=get_labels.resolution)
+  labels <- unlist(labels)
   labels <- labels[!duplicated(names(labels))]
   labels <- labels[order(names(labels))]
   return(labels)

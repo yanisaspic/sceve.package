@@ -2,7 +2,7 @@
 % Please edit documentation in R/report_iteration.R
 \name{report_cells}
 \alias{report_cells}
-\title{Save the cell composition of the characterized clusters in the corresponding records sheet.}
+\title{Report the cell composition of the characterized clusters in the corresponding records sheet.}
 \usage{
 report_cells(characterized_clusters, data.iteration, records, params)
 }
@@ -11,12 +11,11 @@ report_cells(characterized_clusters, data.iteration, records, params)
 The elements are named lists, with seven names:
 \code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label}, \code{markers}, \code{robustness} and \code{specific_markers}.}
 
-\item{data.iteration}{a named list, with four names: \code{expression}, \code{SeuratObject}, \code{ranking_of_genes} and \code{expression.init}.
-The three first elements correspond to the scRNA-seq expression matrix of a specific cell population,
-as well as the SeuratObject and the ranking of genes generated from this matrix.
-The last element corresponds to the full scRNA-seq expression matrix.}
+\item{data.iteration}{a named list, with four names: \code{expression}, \code{SeuratObject}, \code{expression.init} and \code{ranking_of_genes.init}.
+The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
+The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.}
 
-\item{records}{a named list, with three data.frames: \code{cells}, \code{markers} and \code{meta}.}
+\item{records}{a named list, with four data.frames: \code{cells}, \code{markers}, \code{meta} and \code{methods}.}
 
 \item{params}{a list of parameters (cf. \code{sceve::get_default_parameters()}).}
 }
@@ -25,5 +24,5 @@ a data.frame associating cells to their predicted clusters.
 Its rows are cells, its columns are characterized clusters, and cell memberships are reported in the table.
 }
 \description{
-Save the cell composition of the characterized clusters in the corresponding records sheet.
+Report the cell composition of the characterized clusters in the corresponding records sheet.
 }

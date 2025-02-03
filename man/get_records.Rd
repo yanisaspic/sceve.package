@@ -8,9 +8,8 @@ get_records(sheets_path)
 }
 \arguments{
 \item{sheets_path}{a path where result sheets are stored.}
-}
-\value{
-a named list, with three data.frames: \code{cells}, \code{markers} and \code{meta}.
+
+\item{records}{a named list, with four data.frames: \code{cells}, \code{markers}, \code{meta} and \code{methods}.}
 }
 \description{
 Load the records of a scEVE clustering analysis.
