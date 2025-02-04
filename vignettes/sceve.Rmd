@@ -36,14 +36,14 @@ library(sceve)
 The data used in this vignette was published by Darmanis *et al.* [@darmanis2017]. The dataset contains 3,589 cells extracted from the core and the peripheral tissues of human glioblastoma tumors. These cells were sequenced with a SMART-Seq2 protocol, and the expression of up to 23,459 genes was measured. After analyzing the data, Darmanis *et al.* were able to identify 7 unique cell types: astrocytes, immune cells, neoplastic cells, neurons, oligodendrocytes, vascular cells and OPCs (oligodendrocyte precursor cells).
 
 ```{r dataset}
-Darmanis_HumGBM <- load_data("Darmanis_HumGBM")
-expression.init <- Darmanis_HumGBM$expression.init
-ground_truth <- Darmanis_HumGBM$ground_truth
+data <- load_data("Darmanis_HumGBM")
+expression.init <- data$expression.init
+ground_truth <- data$ground_truth
 dim(expression.init)
 unique(ground_truth)
 ```
 
-The loaded `Darmanis_HumGBM` data include the scRNA-seq expression matrix `expression.init`, and the cell types identified by Darmanis *et al.* `ground_truth`.
+The loaded `data` include the scRNA-seq expression matrix `expression.init`, and the cell types identified by Darmanis *et al.* `ground_truth`.
 
 The rows of the expression matrix represent genes, and its columns represent cells. The raw counts measured are directly reported in the matrix. The scEVE framework should be applied on similarly formatted raw count matrices. **Note** that these matrices should also include **more than a 100 cells**; otherwise, the framework won't attempt to divide them.
 
@@ -55,7 +55,7 @@ The scEVE framework is directly applied on the dataset by calling the function `
 results <- sceve(expression.init)
 ```
 
-The results of the `sceve()` function is a list with two elements: `records` and `labels`.
+The results of the `sceve()` function is a list with two elements: `records` and `preds`.
 
 `records` is a named list, with four data.frames: `cells`, `markers`, `meta` and `methods`:
 
@@ -91,12 +91,12 @@ results$records$methods
 
 The table `records$methods` is used to explain which clustering methods contributed to the prediction of a robust cluster. Here for instance, we can see that `densityCut` [@ding2016], `monocle3` [@cao2019] and `Seurat` [@hao2021] all predicted the cluster `C.1`, composed of oligodendrocyte cells. The cluster `C.5.2.1`, composed of astrocyte cells, was predicted by `densityCut` [@ding2016], `Seurat` [@hao2021] and `SHARP` [@wan2020].
 
-```{r labels}
+```{r preds}
 set.seed(1)
-sample(results$labels, size=10)
+sample(results$preds, size=10)
 ```
 
-`labels` corresponds to the most informative cluster labels (*i.e.* the ones with the highest resolution) predicted by scEVE for every cell in the dataset. Basically, the type of output you would get from using any clustering method.
+`preds` corresponds to the most informative cluster labels (*i.e.* the ones with the highest resolution) predicted by scEVE for every cell in the dataset. Basically, the type of output you would get from using any clustering method.
 
 We can see that the cell `Immune cell_1834` was assigned to the cluster `C.4`, whereas the cell `Neoplastic_233` was assigned to the cluster `C.5.2.2`.
 
@@ -123,6 +123,8 @@ These parameters include:
 
 -   `robustness_threshold`, the threshold used to identify robust clusters.
 
+-   `minimum_cells`, the minimum number of cells expected in a population before attempting to sub-cluster it.
+
 -   `figures_path` & `sheets_path`, the default paths where figures and result sheets are stored, respectively.
 
 -   `selected_genes_strategy`, `base_clusters_strategy`, `marker_genes_strategy`, `characterized_clusters_strategy` and `cluster_memberships_strategy`, which are modular functions called by the scEVE framework. These parameters are mostly aimed at developers. They are briefly mentioned when relevant in the following section **Focus on a single clustering iteration of scEVE.** They are extensively presented in the penultimate section **Open framework for developers**.
@@ -136,7 +138,7 @@ First, we need to define some supplementary variables. They are defined prior to
 ```{r init}
 population <- "C"
 records <- initialize_records(expression.init)
-SeuratObject.init <- get_SeuratObject.init(expression.init, params)
+SeuratObject.init <- get_SeuratObject.init(expression.init)
 ```
 
 `SeuratObject.init` will be used to draw some figures during the clustering analysis, and `population` is used to indicate which pool of cells scEVE should attempt to divide during its clustering iteration. The first iteration is always conducted on the the population `C`, which corresponds to all the cells of the dataset. **Note** that `records` is the variable used to **store the results of each clustering iterations**; it is initialized at the start of the framework, and is enriched progressively.
@@ -398,24 +400,45 @@ print(params$cluster_memberships_strategy)
 
 ### On-demand benchmark
 
-To investigate the impact of parameters' modifications on the clustering performance of the scEVE framework, a benchmark can be conducted by calling the function `get_benchmark_sceve()`.
-
-```{r get_benchmark.sceve}
-params <- get_default_parameters()
-# get_benchmark_sceve(expression.init, params)
-```
-
-This benchmark returns six different metrics :
-
--   `time` and `peak_memory_usage` measure the computational performance of the framework. They correspond to the time and the peak memory usage of the algorithm.
--   `ARI` and `NMI` are extrinsic measurements of the clustering performance of the framework. They leverage the ground truth predicted by the authors of the datasets. Their value range from 0 to 1, and it is proportional to the similarity between the clusters predicted by the framework and the ground truth. They are calculated with the package `aricode` [@chiquet2024].
--   `neighbor_purity` and `silhouette` are intrinsic measurements of the clustering performance of the framework. They leverage the gene expression of the cells. Their value range from 0 to 1, and it is proportional to the intra-cluster homogeneity and the inter-cluster dissimilarity. They are calculated with the package `bluster` [@lun2024].
+To investigate the impact of parameters' modifications on the clustering performance of the scEVE framework, a benchmark can be conducted by calling functions from the package. 
 
 A collection of datasets is available to evaluate the scEVE framework. They are listed in the function `get_datasets()`, and each individual dataset is loaded with the function `load_data()`. They correspond to scRNA-seq datasets of raw counts with more than a 100 cells available with the package `TMExplorer` [@christensen2022].
 
 ```{r get_datasets}
 get_datasets()
 ```
+
+The function `get_benchmark_sceve()` is called to evaluate the clustering performance of scEVE with a specific set of parameters.
+
+```{r get_benchmark_sceve}
+datasets <- c("Li_HumCRC_b", "Darmanis_HumGBM")
+params <- get_default_parameters()
+benchmark <- get_benchmark_sceve(datasets, params, "scEVE.default")
+colnames(benchmark)
+```
+
+It returns a table with 8 columns:
+
+-   `method` and `dataset` indicate which clustering method (or which set of scEVE parameters), and which scRNA-seq dataset was employed.
+-   `time (s)` and `peak_memory_usage (Mb)` measure the computational performance of the framework. Here, lower is better.
+-   `ARI` and `NMI` are extrinsic measurements of the clustering performance of the framework. They compare cluster predictions to the cell annotations of the dataset. They are calculated with the package `aricode` [@chiquet2024]. Here, higher is better, and the maximum is 1.
+-   `Purity` and `SI` are intrinsic measurements of the clustering performance of the framework. They compare the gene expression of cells in and out of their clusters. They are calculated with the package `bluster` [@lun2024]. Here, higher is better, and the maximum is 1.
+
+From this table, a lot of information can be learned regarding different instances of the scEVE framework :
+
+```{r benchmark}
+benchmark
+```
+
+Here, we can see that two datasets were used in the benchmark: `Li_HumCRC_b` and `Darmanis_HumGBM`. For each dataset, three methods were benchmarked. The first method `scEVE.default` corresponds to the scEVE framework with its default parameters. We have manually labeled it this way, when we have called `get_benchmark_sceve()`. The second method is `scEVE.default*`, with an asterisk. It is identical to `scEVE.default`, except that the leftover clusters are not used to measure the clustering performance. Because of that, both methods share the same computational performance metrics. 
+
+Finally, the third method is `ground_truth`; it corresponds to the clusters predicted by the authors of the dataset. Obviously, we cannot measure computational performance metrics for the `ground_truth`. Obviously too, its `ARI` and its `NMI` are 1 (the maximum): these two metrics are based on the ground truth. 
+
+For the dataset `Li_HumCRC`, we see that both `scEVE.default` and `scEVE.default*` have no `Purity` and no `SI`, as well as missing or null `ARI` and `NMI`. This happens when scEVE cannot predict any robust cluster in the initial cell population `C`. 
+
+For the dataset `Darmanis_HumGBM`, we see that both `scEVE.default` and `scEVE.default*` have a higher intrinsic clustering performance than `ground_truth`, with `scEVE.default*` having the highest clustering performances. It would indicate that, on this dataset, the clusters predicted using scEVE are better defined than the ones proposed by the authors.
+
+Regardless, we expect developers to take full advantage of this open framework and its on-demand benchmark.
 
 # Session information
 

@@ -33,8 +33,6 @@ get_expression.selected <- function(expression, params) {
   #'
   selected_genes <- params$selected_genes_strategy(expression, params)
   expression.selected <- expression[selected_genes,]
-  expression.selected <- expression.selected[, colSums(expression.selected)>0]
-    # ignore cells that do not express any selected genes.
   return(expression.selected)
 }
 
@@ -121,7 +119,7 @@ extract_data <- function(population, expression.init, SeuratObject.init, records
   #' @export
   #'
   cells_of_population <- get_cells_of_population(population, records$cells)
-  if (length(cells_of_population)>=100) {
+  if (length(cells_of_population) >= params$minimum_cells) {
     # the parameter sncells of the clustering algorithm SHARP is set to 100 by default.
     expression.population <- expression.init[, cells_of_population]
     expression.population <- get_expression.selected(expression.population, params)

@@ -35,6 +35,8 @@ Imports:
     rlang,
     scater,
     SCpubr,
+    scran,
+    scuttle,
     sessioninfo,
     Seurat,
     SeuratWrappers,

@@ -2,69 +2,168 @@
 
 	2025/02/03 @yanisaspic"
 
-get_extrinsic_clustering_metrics <- function(ground_truth, labels) {
-  #' Using extrinsic metrics, measure the clustering performance.
-  #' Extrinsic metrics compare the clustering results of an algorithm 
-  #' to the ground truth of the authors of the dataset.
-  #' The extrinsic metrics used are the Adjusted Rand index (ARI) and the Normalized Mutual Information (NMI).
-  #' 
-  #' @param ground_truth a named factor associating cells to their cluster annotations.
-  #' @param labels a named factor associating cells to their predicted clusters.
+get_data.bluster <- function(expression.init) {
+  #' Get a matrix usable for the functions of bluster.
   #'
-  #' @return a named vector of numerics with two names: `ARI` and `NMI`.
-  #' 
-  #' @import aricode
+  #' @param a scRNA-seq dataset of raw count expression, without selected genes.
+  #' Its rows are genes and its columns are cells.
   #'
-  ground_truth <- ground_truth[names(labels)]
-  extrinsic_clustering_metrics <- c("ARI"=aricode::ARI(ground_truth, labels),
-                                    "NMI"=aricode::NMI(ground_truth, labels))
-  return(extrinsic_clustering_metrics)
+  #' @return an object associating selected genes and cells to their reduced dimensions.
+  #'
+  #' @import scater
+  #' @import scran
+  #' @import scuttle
+  #' @import SingleCellExperiment
+  #'
+  data <- SingleCellExperiment::SingleCellExperiment(assays=list(counts=as.matrix(expression.init)))
+  data <- scuttle::logNormCounts(data)
+  variable_genes <- scran::getTopHVGs(scran::modelGeneVar(data), n=1000)
+  set.seed(1)
+  data <- scater::runPCA(data, ncomponents=20, subset_row=variable_genes)
+  data <- SingleCellExperiment::reducedDim(data)
+  return(data)
 }
 
-get_intrinsic_clustering_metrics <- function(expression.init, labels) {
-  #' Using intrinsic metrics, measure the clustering performance.
-  #' Intrinsic metrics compare the clustering results of an algorithm
-  #' to the similarity in expression of the cells in a cluster,
-  #' with regards to the dissimilarity in expression of the cells in different clusters.
-  #' The intrinsic metrics used are the average neighborhood purity and the average silhouette index of the clusters.
-  #' 
+get_clustering_metrics.intrinsic <- function(expression.init, preds) {
+  #' Using intrinsic metrics, measure a clustering performance.
+  #'
   #' @param expression.init a scRNA-seq dataset of raw count expression, without selected genes.
   #' Its rows are genes and its columns are cells.
-  #' @param labels a named factor associating cells to their predicted clusters.
+  #' @param preds a named factor associating cells to their predicted clusters.
   #'
-  #' @return a named vector of numerics with two names: `neighborhood_purity` and `silhouette_index`.
-  #' 
+  #' @return a named vector of with two names: `Purity` and `SI`.
+  #'
   #' @import bluster
-  #' 
-  data <- t(expression.init)
-  data <- data[names(labels), ]
-  #neighborhood_purity <- bluster::neighborPurity(data, labels)
-  silhouette_index <- bluster::approxSilhouette(data, labels)
-  intrinsic_clustering_metrics <- c(#"neighborhood_purity"=mean(neighborhood_purity$purity),
-                                    "silhouette_index"=mean(silhouette_index$width))
-  return(intrinsic_clustering_metrics)
+  #'
+  n_clusters_predicted <- length(unique(preds))
+  if (n_clusters_predicted < 2) {return(c("Purity"=NA, "SI"=NA))}
+  data <- get_data.bluster(expression.init)
+  neighborhood_purity <- bluster::neighborPurity(data, preds)
+  silhouette_index <- bluster::approxSilhouette(data, preds)
+  clustering_metrics.intrinsic <- c("Purity"=mean(neighborhood_purity$purity),
+                                    "SI"=mean(silhouette_index$width))
+  return(clustering_metrics.intrinsic)
 }
 
-get_benchmark_sceve <- function(data, params) {
-  #' Using both extrinsic and intrisic metrics, measure the clustering performance.
-  #' 
+get_clustering_metrics <- function(data, preds) {
+  #' Using both intrinsic and extrinsic clustering metrics, measure a clustering performance.
+  #' Extrinsic metrics compare cluster predictions to the cell annotations of the dataset.
+  #' Intrinsic metrics compare the gene expression of cells in and out of their clusters.
+  #' The `ARI` and the `NMI` are extrinsic metrics.
+  #' The `Purity` and the `SI` are intrinsic metrics.
+  #' For every metric, higher is better and the maximum value is 1.
+  #'
+  #' @param data a named list with two elements: `expression.init` and `ground_truth`.
+  #' `expression.init` is a scRNA-seq dataset of raw count expression, without selected genes.
+  #' Its rows are genes and its columns are cells.
+  #' `ground_truth` is a named factor associating cells to their cluster annotations.
+  #' @param preds a named factor associating cells to their predicted clusters.
+  #'
+  #' @return a named vector with four names: `ARI`, `NMI`, `Purity` and `SI`.
+  #'
+  #' @import aricode
+  #'
+  if (length(preds) < 2) {return(c("ARI"=NA, "NMI"=NA, "Purity"=NA, "SI"=NA))}
+  ground_truth <- data$ground_truth[names(preds)]
+  expression.init <- data$expression.init[, names(preds)]
+  clustering_metrics <- c("ARI"=aricode::ARI(ground_truth, preds),
+                          "NMI"=aricode::NMI(ground_truth, preds),
+                          get_clustering_metrics.intrinsic(expression.init, preds))
+  return(clustering_metrics)
+}
+
+get_benchmark_method.data <- function(data, clustering_method, method_label) {
+  #' Using computational as well as intrinsic and extrinsic clustering metrics, measure
+  #' the performance of a clustering method on a dataset.
+  #'
+  #' @param data a named list with two elements: `expression.init` and `ground_truth`.
+  #' `expression.init` is a scRNA-seq dataset of raw count expression, without selected genes.
+  #' Its rows are genes and its columns are cells.
+  #' `ground_truth` is a named factor associating cells to their cluster annotations.
+  #' @param clustering_method a function taking `expression.init` as input, and outputing
+  #' a factor associating cells to their predicted clusters.
+  #' @param method_label a character.
+  #'
+  #' @return a data.frame with seven columns: `method`, `time (s)`,
+  #' `peak_memory_usage (Mb)`, `ARI`, `NMI`, `Purity` and `SI`.
+  #'
+  #' @export
+  #'
+  get_memory_usage <- function(memory) {memory[[11]] + memory[[12]]}
+  memory_usage.init <- get_memory_usage(gc(reset=TRUE))
+  time.init <- Sys.time()
+  preds <- clustering_methods(data$expression.init)
+  time <- as.numeric(Sys.time() - time.init, units="secs")
+  peak_memory_usage <- get_memory_usage(gc()) - memory_usage.init
+  benchmark <- c("method"=method_label, "time (s)"=time,
+                 "peak_memory_usage (Mb)"=peak_memory_usage,
+                 get_clustering_metrics(data, preds))
+  benchmark <- as.data.frame(t(benchmark))
+  return(benchmark)
+}
+
+get_benchmark_sceve.data <- function(data, params, method_label) {
+  #' Using computational as well as intrinsic and extrinsic clustering metrics, measure
+  #' the performance of an instance of the scEVE framework on a dataset.
+  #'
   #' @param data a named list with two elements: `expression.init` and `ground_truth`.
   #' `expression.init` is a scRNA-seq dataset of raw count expression, without selected genes.
   #' Its rows are genes and its columns are cells.
   #' `ground_truth` is a named factor associating cells to their cluster annotations.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
-  #' 
-  #' @return a named vector of numerics with six names: `time`, `peak_memory_usage`, 
-  #' `ARI`, `NMI`, `neighbordhood_purity` and `silhouette_index`.
-  #' 
-  memory <- gc(reset=TRUE)
-  memory_usage0 <- memory[[11]] + memory[[12]]
-  time0 <- Sys.time() #_________________________________________________________
+  #' @param method_label a character.
+  #'
+  #' @return a data.frame with seven columns: `method`, `time (s)`,
+  #' `peak_memory_usage (Mb)`, `ARI`, `NMI`, `Purity` and `SI`.
+  #'
+  #' @import glue
+  #'
+  get_memory_usage <- function(memory) {memory[[11]] + memory[[12]]}
+  memory_usage.init <- get_memory_usage(gc(reset=TRUE))
+  time.init <- Sys.time()
   results <- sceve(data$expression.init, params, figures=FALSE, sheets=FALSE)
-  time <- Sys.time()  #_________________________________________________________
-  memory <- gc()
-  memory_usage <- memory[[11]] + memory[[12]]
-  
-  metrics <- c("time"=time-time0, "peak_memory_usage"=memory_usage-memory_usage0)
-  return(metrics)
+  time <- as.numeric(Sys.time() - time.init, units="secs")
+  peak_memory_usage <- get_memory_usage(gc()) - memory_usage.init
+
+  population_is_leftover <- function(population) {
+    (results$records$meta[population, "robustness"] == 0)}
+  leftover_populations <- Filter(population_is_leftover, levels(results$preds))
+
+  benchmark.1 <- c("method"=method_label, "time (s)"=time,
+                   "peak_memory_usage (Mb)"=peak_memory_usage,
+                   get_clustering_metrics(data, results$preds))
+  benchmark.2 <- c("method"=glue::glue("{method_label}*"), "time (s)"=time,
+                   "peak_memory_usage (Mb)"=peak_memory_usage,
+                   get_clustering_metrics(data, results$preds[!results$preds %in% leftover_populations]))
+  benchmark <- as.data.frame(rbind(benchmark.1, benchmark.2))
+  return(benchmark)
+}
+
+get_benchmark_sceve <- function(datasets, params, method_label) {
+  #' Using computational as well as intrinsic and extrinsic clustering metrics, measure
+  #' the performance of an instance of the scEVE framework on multiple datasets.
+  #'
+  #' @param datasets a vector of datasets (cf. `sceve::get_datasets()`).
+  #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
+  #' @param method_label a character.
+  #'
+  #' @return a data.frame with eight columns: `method`, `dataset`, `time (s)`,
+  #' `peak_memory_usage (Mb)`, `ARI`, `NMI`, `Purity` and `SI`.
+  #'
+  #' @export
+  #'
+  get_benchmark_sceve.dataset <- function(dataset) {
+    data <- load_data(dataset)
+    benchmark <- get_benchmark_sceve.data(data, params, method_label)
+    ground_truth <- c("method"="ground_truth", "time (s)"=NA,
+                      "peak_memory_usage (Mb)"=NA, "ARI"=1, "NMI"=1,
+                      get_clustering_metrics.intrinsic(data$expression.init, data$ground_truth))
+    benchmark <- rbind(benchmark, ground_truth)
+    benchmark[, "dataset"] <- dataset
+    return(benchmark)}
+
+  benchmarks <- lapply(X=datasets, FUN=get_benchmark_sceve.dataset)
+  benchmarks <- do.call(rbind, benchmarks)
+  rownames(benchmarks) <- NULL
+  return(benchmarks)
 }

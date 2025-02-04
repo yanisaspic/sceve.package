@@ -91,11 +91,13 @@ load_data <- function(dataset) {
 
   if (accession_number == "GSE84465") {data <- head(data, -6)}
   # the 6 last rows are metadata in the Darmanis_HumGBM dataset.
-
   data <- get_data(data)
+
   cell_ids <- get_cell_ids(data$ground_truth)
   names(data$ground_truth) <- cell_ids
   data$ground_truth <- factor(data$ground_truth)
+
   colnames(data$expression.init) <- cell_ids
+  rownames(data$expression.init) <- gsub("_", "+", rownames(data$expression.init))
   return(data)
 }

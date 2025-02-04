@@ -6,6 +6,7 @@ get_default_parameters <- function() {
   #' Get the default parameters of the scEVE algorithm. These parameters are:
   #' `random_state` the integer seed used to have deterministic results.
   #' `robustness_threshold` the threshold used to identify robust clusters.
+  #' `minimum_cells` the minimum number of cells expected in a population before attempting to sub-cluster it.
   #' `figures_path` & `sheets_path` the default paths where figures and result sheets are stored, respectively.
   #' `selected_genes_strategy` a function called to select a limited pool of genes for a clustering iteration.
   #' `base_clusters_strategy` a function called to predict base clusters with multiple clustering methods.
@@ -18,7 +19,7 @@ get_default_parameters <- function() {
   #'
   #' @export
   #'
-  params <- list(random_state=1, robustness_threshold=0.33,
+  params <- list(random_state=1, robustness_threshold=0.33, minimum_cells=100,
                  figures_path="./scEVE", sheets_path="./scEVE/records.xlsx",
                  selected_genes_strategy=get_selected_genes.n_most_variable,
                  base_clusters_strategy=get_base_clusters.default_methods,
@@ -62,7 +63,6 @@ get_SeuratObject.init <- function(expression.init, params) {
   #'
   #' @param expression.init a scRNA-seq dataset of raw count expression, without selected genes.
   #' Its rows are genes and its columns are cells.
-  #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #'
   #' @return a SeuratObject, on which the function RunUMAP() of Seurat has been applied already.
   #'
@@ -71,14 +71,13 @@ get_SeuratObject.init <- function(expression.init, params) {
   #' @export
   #'
   SeuratObject.init <- Seurat::CreateSeuratObject(expression.init)
-  selected_genes <- params$selected_genes_strategy(expression.init)
-  Seurat::VariableFeatures(SeuratObject.init) <- selected_genes
+  SeuratObject.init <- Seurat::FindVariableFeatures(SeuratObject.init, nfeatures = 1000)
   SeuratObject.init <- Seurat::NormalizeData(SeuratObject.init)
   SeuratObject.init <- Seurat::ScaleData(SeuratObject.init,
                                          features=Seurat::VariableFeatures(SeuratObject.init))
   SeuratObject.init <- Seurat::RunUMAP(SeuratObject.init,
                                        features=Seurat::VariableFeatures(SeuratObject.init),
-                                       seed.use=params$random_state)
+                                       seed.use=1)
   return(SeuratObject.init)
 }
 
@@ -137,9 +136,9 @@ sceve <- function(expression.init, params=get_default_parameters(), figures=TRUE
   #' @param figures a boolean that indicates if figures should be drawn to explain the clustering iteration.
   #' @param sheets a boolean that indicates if the results of the clustering iteration should be saved in Excel sheets.
   #'
-  #' @return a named list, with two elements: `records` and `labels`.
+  #' @return a named list, with two elements: `records` and `preds`.
   #' `records` is a named list, with four data.frames: `cells`, `markers`, `meta` and `methods`.
-  #' `labels` is a named factor associating cells to their predicted clusters.
+  #' `preds` is a named factor associating cells to their predicted clusters.
   #'
   #' @import openxlsx
   #'
@@ -148,7 +147,7 @@ sceve <- function(expression.init, params=get_default_parameters(), figures=TRUE
   records <- initialize_records(expression.init)
   if (figures) {
     dir.create(params$figures_path)
-    SeuratObject.init <- get_SeuratObject.init(expression.init, params)}
+    SeuratObject.init <- get_SeuratObject.init(expression.init)}
   else {SeuratObject.init <- NA}
   population <- "C"
 
@@ -160,6 +159,6 @@ sceve <- function(expression.init, params=get_default_parameters(), figures=TRUE
   gene_is_marker <- function(gene) {sum(gene) > 0}
   records$markers <- records$markers[apply(X=records$markers, MARGIN=1, FUN=gene_is_marker),]
   if (sheets) {openxlsx::write.xlsx(records, params$sheets_path, rowNames=TRUE)}
-  results <- list(records=records, labels=factor(get_leaf_clusters(records$cells)))
+  results <- list(records=records, preds=factor(get_leaf_clusters(records$cells)))
   return(results)
 }
