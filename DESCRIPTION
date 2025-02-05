@@ -4,7 +4,9 @@ Version: 0.0.0.9000
 Authors@R: 
     person("Yanis", "Asloudj", , "yanis.asloudj@u-bordeaux.fr", role = c("aut", "cre"),
            comment = c(ORCID = "0009-0003-5440-6268"))
-Description: scEVE is an alternative approach to integrate multiple scRNA-seq clustering results. Instead of minimizing the differences of multiple clustering results generated with a panel of methods, scEVE describes these differences, and it leverages them to identify clusters that are robust to the method used.
+Description: scEVE is an alternative approach to integrate multiple scRNA-seq clustering results.
+    Instead of minimizing the differences of multiple clustering results generated with a panel of methods,
+    scEVE describes these differences, and it leverages them to identify clusters that are robust to the method used.
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
