@@ -50,7 +50,13 @@ Imports:
     TMExplorer,
     viridis
 Remotes:
-    url::https://cran.r-project.org/src/contrib/Archive/clues/clues_0.6.2.2.tar.gz,
+    bioc::release/bluster
+    bioc::release/scater
+    bioc::release/scran
+    bioc::release/scuttle
+    bioc::release/SingleCellExperiment
+    bioc::release/SummarizedExperiment
+    bioc::release/TMExplorer
     bitbucket::jerry00/densitycut_dev@3878b5f,
     github::cole-trapnell-lab/monocle3@2b17745,
     github::satijalab/seurat-wrappers@d28512f,
