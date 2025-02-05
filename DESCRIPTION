@@ -50,13 +50,13 @@ Imports:
     TMExplorer,
     viridis
 Remotes:
-    bioc::3.18/bluster
-    bioc::3.18/scater
-    bioc::3.18/scran
-    bioc::3.18/scuttle
-    bioc::3.18/SingleCellExperiment
-    bioc::3.18/SummarizedExperiment
-    bioc::3.18/TMExplorer
+    bioc::3.18/bluster,
+    bioc::3.18/scater,
+    bioc::3.18/scran,
+    bioc::3.18/scuttle,
+    bioc::3.18/SingleCellExperiment,
+    bioc::3.18/SummarizedExperiment,
+    bioc::3.18/TMExplorer,
     bitbucket::jerry00/densitycut_dev@3878b5f,
     github::cole-trapnell-lab/monocle3@2b17745,
     github::satijalab/seurat-wrappers@d28512f,
