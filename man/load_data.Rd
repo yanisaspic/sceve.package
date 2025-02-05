@@ -12,8 +12,10 @@ load_data(dataset)
 (cf. \code{sceve::get_datasets()})}
 }
 \value{
-a scRNA-seq dataset of raw count expression, without selected genes.
+a named list with two elements: \code{expression.init} and \code{ground_truth}.
+\code{expression.init} is a scRNA-seq dataset of raw count expression, without selected genes.
 Its rows are genes and its columns are cells.
+\code{ground_truth} is a named factor associating cells to their cluster annotations.
 }
 \description{
 Load a scRNA-seq dataset of raw count expression.

@@ -6,13 +6,11 @@
 This function is used once prior to a scEVE clustering analysis in order to draw the
 extracted data at each clustering iteration (cf. \code{sceve::draw_extracted_data()}).}
 \usage{
-get_SeuratObject.init(expression.init, params)
+get_SeuratObject.init(expression.init)
 }
 \arguments{
 \item{expression.init}{a scRNA-seq dataset of raw count expression, without selected genes.
 Its rows are genes and its columns are cells.}
-
-\item{params}{a list of parameters (cf. \code{sceve::get_default_parameters()}).}
 }
 \value{
 a SeuratObject, on which the function RunUMAP() of Seurat has been applied already.

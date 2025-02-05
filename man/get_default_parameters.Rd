@@ -5,6 +5,7 @@
 \title{Get the default parameters of the scEVE algorithm. These parameters are:
 \code{random_state} the integer seed used to have deterministic results.
 \code{robustness_threshold} the threshold used to identify robust clusters.
+\code{minimum_cells} the minimum number of cells expected in a population before attempting to sub-cluster it.
 \code{figures_path} & \code{sheets_path} the default paths where figures and result sheets are stored, respectively.
 \code{selected_genes_strategy} a function called to select a limited pool of genes for a clustering iteration.
 \code{base_clusters_strategy} a function called to predict base clusters with multiple clustering methods.
@@ -22,6 +23,7 @@ a list of parameters.
 Get the default parameters of the scEVE algorithm. These parameters are:
 \code{random_state} the integer seed used to have deterministic results.
 \code{robustness_threshold} the threshold used to identify robust clusters.
+\code{minimum_cells} the minimum number of cells expected in a population before attempting to sub-cluster it.
 \code{figures_path} & \code{sheets_path} the default paths where figures and result sheets are stored, respectively.
 \code{selected_genes_strategy} a function called to select a limited pool of genes for a clustering iteration.
 \code{base_clusters_strategy} a function called to predict base clusters with multiple clustering methods.

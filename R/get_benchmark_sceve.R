@@ -5,7 +5,7 @@
 get_data.bluster <- function(expression.init) {
   #' Get a matrix usable for the functions of bluster.
   #'
-  #' @param a scRNA-seq dataset of raw count expression, without selected genes.
+  #' @param expression.init a scRNA-seq dataset of raw count expression, without selected genes.
   #' Its rows are genes and its columns are cells.
   #'
   #' @return an object associating selected genes and cells to their reduced dimensions.
@@ -70,36 +70,6 @@ get_clustering_metrics <- function(data, preds) {
                           "NMI"=aricode::NMI(ground_truth, preds),
                           get_clustering_metrics.intrinsic(expression.init, preds))
   return(clustering_metrics)
-}
-
-get_benchmark_method.data <- function(data, clustering_method, method_label) {
-  #' Using computational as well as intrinsic and extrinsic clustering metrics, measure
-  #' the performance of a clustering method on a dataset.
-  #'
-  #' @param data a named list with two elements: `expression.init` and `ground_truth`.
-  #' `expression.init` is a scRNA-seq dataset of raw count expression, without selected genes.
-  #' Its rows are genes and its columns are cells.
-  #' `ground_truth` is a named factor associating cells to their cluster annotations.
-  #' @param clustering_method a function taking `expression.init` as input, and outputing
-  #' a factor associating cells to their predicted clusters.
-  #' @param method_label a character.
-  #'
-  #' @return a data.frame with seven columns: `method`, `time (s)`,
-  #' `peak_memory_usage (Mb)`, `ARI`, `NMI`, `Purity` and `SI`.
-  #'
-  #' @export
-  #'
-  get_memory_usage <- function(memory) {memory[[11]] + memory[[12]]}
-  memory_usage.init <- get_memory_usage(gc(reset=TRUE))
-  time.init <- Sys.time()
-  preds <- clustering_methods(data$expression.init)
-  time <- as.numeric(Sys.time() - time.init, units="secs")
-  peak_memory_usage <- get_memory_usage(gc()) - memory_usage.init
-  benchmark <- c("method"=method_label, "time (s)"=time,
-                 "peak_memory_usage (Mb)"=peak_memory_usage,
-                 get_clustering_metrics(data, preds))
-  benchmark <- as.data.frame(t(benchmark))
-  return(benchmark)
 }
 
 get_benchmark_sceve.data <- function(data, params, method_label) {

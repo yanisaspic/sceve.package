@@ -13,8 +13,6 @@ use_Seurat <- function(SeuratObject.population, params) {
   #'
   #' @import Seurat
   #'
-  #' @export
-  #'
   SeuratObject.population <- Seurat::RunPCA(SeuratObject.population,
                                             features=Seurat::VariableFeatures(SeuratObject.population),
                                             seed.use=params$random_state)
@@ -39,9 +37,6 @@ use_monocle3 <- function(SeuratObject.population, params) {
   #' @import R.utils
   #' @import Seurat
   #' @import SeuratWrappers
-  #'
-  #' @export
-  #'
   #'
   if (!"umap" %in% names(SeuratObject.population@reductions)) {
     SeuratObject.population <- Seurat::RunUMAP(SeuratObject.population,
@@ -79,8 +74,6 @@ use_SHARP <- function(expression.population, params) {
   #'
   #' @import clues
   #' @import SHARP
-  #'
-  #' @export
   #'
   results <- SHARP::SHARP(scExp=expression.population, exp.type="count",
                           n.cores = 2, rN.seed=params$random_state)

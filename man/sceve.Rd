@@ -22,9 +22,9 @@ Its rows are genes and its columns are cells.}
 \item{sheets}{a boolean that indicates if the results of the clustering iteration should be saved in Excel sheets.}
 }
 \value{
-a named list, with two elements: \code{records} and \code{labels}.
+a named list, with two elements: \code{records} and \code{preds}.
 \code{records} is a named list, with four data.frames: \code{cells}, \code{markers}, \code{meta} and \code{methods}.
-\code{labels} is a named factor associating cells to their predicted clusters.
+\code{preds} is a named factor associating cells to their predicted clusters.
 }
 \description{
 Conduct a clustering analysis with the scEVE framework.

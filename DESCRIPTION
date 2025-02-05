@@ -14,8 +14,10 @@ Suggests:
     rmarkdown
 VignetteBuilder: knitr
 Imports: 
+    aricode,
     arules,
     assertthat,
+    bluster,
     clues,
     colorspace,
     densitycut,

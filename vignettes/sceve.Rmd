@@ -414,7 +414,6 @@ The function `get_benchmark_sceve()` is called to evaluate the clustering perfor
 datasets <- c("Li_HumCRC_b", "Darmanis_HumGBM")
 params <- get_default_parameters()
 benchmark <- get_benchmark_sceve(datasets, params, "scEVE.default")
-colnames(benchmark)
 ```
 
 It returns a table with 8 columns:
@@ -438,7 +437,7 @@ For the dataset `Li_HumCRC`, we see that both `scEVE.default` and `scEVE.default
 
 For the dataset `Darmanis_HumGBM`, we see that both `scEVE.default` and `scEVE.default*` have a higher intrinsic clustering performance than `ground_truth`, with `scEVE.default*` having the highest clustering performances. It would indicate that, on this dataset, the clusters predicted using scEVE are better defined than the ones proposed by the authors.
 
-Regardless, we expect developers to take full advantage of this open framework and its on-demand benchmark.
+Regardless of this specific outcome, we expect developers to take full advantage of this open framework and its on-demand benchmark to explore and evaluate different instances of our original ensemble framework.
 
 # Session information
 

@@ -1,6 +1,6 @@
-"Function called to load a scRNA-seq dataset presented in the vignette.
+"Function called to load scRNA-seq datasets.
 
-	2025/01/16 @yanisaspic"
+	2025/02/05 @yanisaspic"
 
 get_datasets <- function() {
   #' Get information regarding the datasets available on TMExplorer for scEVE.

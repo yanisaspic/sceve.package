@@ -1,6 +1,6 @@
 "Functions called to set-up the data of a scEVE clustering iteration.
 
-	2025/01/16 @yanisaspic"
+	2025/02/ @yanisaspic"
 
 get_selected_genes.n_most_variable <- function(expression, params, n_genes=500) {
   #' Get the n most variable genes in a scRNA-seq dataset.
@@ -68,12 +68,11 @@ get_SeuratObject.selected <- function(expression.selected) {
   #'
   #' @import Seurat
   #'
-  SeuratObject <- Seurat::CreateSeuratObject(expression.selected)
-  Seurat::VariableFeatures(SeuratObject) <- rownames(expression.selected)
-  SeuratObject <- Seurat::NormalizeData(SeuratObject)
-  SeuratObject <- Seurat::ScaleData(SeuratObject,
-                                    features=Seurat::VariableFeatures(SeuratObject))
-  return(SeuratObject)
+  SeurObj <- Seurat::CreateSeuratObject(expression.selected)
+  Seurat::VariableFeatures(SeurObj) <- rownames(expression.selected)
+  SeurObj <- Seurat::NormalizeData(SeurObj)
+  SeurObj <- Seurat::ScaleData(SeurObj, features=Seurat::VariableFeatures(SeurObj))
+  return(SeurObj)
 }
 
 get_ranking_of_genes <- function(expression.selected) {
