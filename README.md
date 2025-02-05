@@ -12,7 +12,7 @@ You can install scEVE from Github with:
 
 ```{r}
 install.packages("devtools")
-devtools::install_github("yanisaspic/sceve.package")
+devtools::install_github("yanisaspic/sceve.package", dependencies=TRUE)
 ```
 
 ## Overview of the scEVE framework
