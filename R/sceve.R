@@ -3,7 +3,9 @@
 	2025/01/16 @yanisaspic"
 
 get_default_parameters <- function() {
-  #' Get the default parameters of the scEVE algorithm. These parameters are:
+  #' Get the default parameters of the scEVE algorithm.
+  #'
+  #' These parameters are:
   #' `random_state` the integer seed used to have deterministic results.
   #' `robustness_threshold` the threshold used to identify robust clusters.
   #' `minimum_cells` the minimum number of cells expected in a population before attempting to sub-cluster it.
@@ -13,6 +15,7 @@ get_default_parameters <- function() {
   #' `marker_genes_strategy` a function called to predict the marker genes of every meta-cluster.
   #' `characterized_clusters_strategy` a function called to identify characterized clusters.
   #' `cluster_memberships_strategy` a function called to quantify the
+  #'
   #' Detailed information regarding the strategy parameters are available in the vignette of the package.
   #'
   #' @return a list of parameters.
@@ -31,6 +34,7 @@ get_default_parameters <- function() {
 
 initialize_records <- function(expression.init) {
   #' Get a named list, with four data.frames: `cells`, `markers`, `meta` and `methods`.
+  #'
   #' - `cells` associates cells to their predicted populations.
   #' Its rows are cells, its columns are predicted populations, and cell memberships are reported in the table.
   #' - `markers` associates predicted populations to their marker genes.
@@ -58,6 +62,7 @@ initialize_records <- function(expression.init) {
 
 get_SeuratObject.init <- function(expression.init) {
   #' Get a SeuratObject from a scRNA-seq dataset of raw count expression, without selected genes.
+  #'
   #' This function is used once prior to a scEVE clustering analysis in order to draw the
   #' extracted data at each clustering iteration (cf. `sceve::draw_extracted_data()`).
   #'
@@ -116,7 +121,7 @@ sceve.iteration <- function(population, expression.init, SeuratObject.init, reco
     if (length(data.iteration) == 0) {break()} # the cell population is too small
     base_clusters <- get_base_clusters(population, data.iteration, params, figures)
     meta_clusters <- get_meta_clusters(population, base_clusters, data.iteration, records, params, figures)
-    if (length(meta_clusters) == 1) {break()} # multiple sub-clusters are not predicted
+    if (length(meta_clusters) == 0) {break()} # multiple sub-clusters are not predicted
     characterized_clusters <- get_characterized_clusters(population, meta_clusters, data.iteration, params, figures)
     if (length(characterized_clusters) == 0) {break()}  # the sub-clusters are homogenous
     records <- report_iteration(population, characterized_clusters, data.iteration, records, params)

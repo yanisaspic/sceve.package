@@ -47,6 +47,7 @@ get_clustering_metrics.intrinsic <- function(expression.init, preds) {
 
 get_clustering_metrics <- function(data, preds) {
   #' Using both intrinsic and extrinsic clustering metrics, measure a clustering performance.
+  #'
   #' Extrinsic metrics compare cluster predictions to the cell annotations of the dataset.
   #' Intrinsic metrics compare the gene expression of cells in and out of their clusters.
   #' The `ARI` and the `NMI` are extrinsic metrics.
@@ -133,7 +134,7 @@ get_benchmark_sceve <- function(datasets, params, method_label) {
     return(benchmark)}
 
   benchmarks <- lapply(X=datasets, FUN=get_benchmark_sceve.dataset)
-  benchmarks <- do.call(rbind, benchmarks)
-  rownames(benchmarks) <- NULL
-  return(benchmarks)
+  benchmark <- do.call(rbind, benchmarks)
+  rownames(benchmark) <- NULL
+  return(benchmark)
 }

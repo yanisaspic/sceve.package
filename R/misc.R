@@ -15,6 +15,7 @@ get_resolution <- function(population) {
 
 get_populations_at_resolution <- function(resolution, records.cells) {
   #' Get all the populations at a specific resolution.
+  #'
   #' The root population is resolution 1, and its children populations are resolution 2, etc.
   #'
   #' @param resolution an integer.
@@ -72,6 +73,7 @@ get_cells_of_population <- function(population, records.cells) {
 
 get_gene_occurrences <- function(ranking_of_genes) {
   #' Get the gene occurrences with regards to the gene sampling effort.
+  #'
   #' The occurrences correspond to the number of cells expressing a gene, and the
   #' sampling effort corresponds to the number of genes sampled in a cell.
   #' The genes are sampled in a descending order, so that the n most expressed genes
@@ -114,6 +116,8 @@ get_records <- function(sheets_path) {
   #'
   #' @import openxlsx
   #'
+  #' @export
+  #'
   sheets_names <- openxlsx::getSheetNames(sheets_path)
   get_sheet <- function(sheets_name) {openxlsx::read.xlsx(sheets_path, sheet=sheets_name, rowNames=TRUE)}
   records <- sapply(X=sheets_names, FUN=get_sheet)
@@ -148,7 +152,7 @@ get_leaf_clusters <- function(records.cells) {
 
   # get the labels of every cell with a bottom-up approach, where cell labels are successively added
   # from the maximum resolution to the minimal one (i.e. the label 'C').
-  labels <- sapply(X=get_maximum_resolution(records.cells):2, FUN=get_labels.resolution)
+  labels <- lapply(X=get_maximum_resolution(records.cells):2, FUN=get_labels.resolution)
   labels <- unlist(labels)
   labels <- labels[!duplicated(names(labels))]
   labels <- labels[order(names(labels))]

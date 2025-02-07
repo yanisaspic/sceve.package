@@ -4,6 +4,7 @@
 
 get_selected_genes.n_most_variable <- function(expression, params, n_genes=500) {
   #' Get the n most variable genes in a scRNA-seq dataset.
+  #'
   #' The variable genes are identified by calling the function FindVariableFeatures() of Seurat.
   #'
   #' @param expression a scRNA-seq dataset of raw count expression, without selected genes.
@@ -59,6 +60,7 @@ ignore_dropped_genes <- function(ranking_of_genes, expression.selected) {
 
 get_SeuratObject.selected <- function(expression.selected) {
   #' Get a SeuratObject from a scRNA-seq dataset of raw count expression, with selected genes.
+  #'
   #' This function is used as a pre-processing step for the Seurat and monocle3 clustering algorithms.
   #'
   #' @param expression.selected a scRNA-seq dataset of raw count expression, with selected genes.
@@ -77,6 +79,7 @@ get_SeuratObject.selected <- function(expression.selected) {
 
 get_ranking_of_genes <- function(expression.selected) {
   #' Rank the genes of every cell by descending order of expression, and get the resulting table.
+  #'
   #' Only expressed genes are reported, and the number of genes expressed varies across cells.
   #' Hence, some table cells include NA values.
   #'

@@ -33,6 +33,7 @@ merge_drawings <- function(population, params) {
 
 get_cluster_memberships.binary_membership <- function(characterized_clusters, data.iteration, params) {
   #' Get a table reporting the cell composition of the characterized clusters.
+  #'
   #' By calling this function, the cells assigned to the leftover cluster are hard clustered,
   #' i.e. their membership to the leftover is 1 and their membership to the other clusters is 0.
   #'

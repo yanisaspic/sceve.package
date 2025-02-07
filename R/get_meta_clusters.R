@@ -27,6 +27,7 @@ get_transaction_database <- function(base_clusters) {
 get_associations <- function(transaction_database) {
   #' Measure the strength of the association between pairs of predicted clusters,
   #' according to the confidence metric of the frequent itemset mining framework.
+  #'
   #' The confidence(A->C) corresponds to the proportion of cells in the cluster A, that
   #' are also in the cluster C. Note that confidence(A->C) can differ from confidence(C->A).
   #' Associations involving a minority of cells (i.e. confidence < 0.5) are filtered out.
@@ -53,6 +54,7 @@ get_associations <- function(transaction_database) {
 
 get_strong_similarities <- function(associations) {
   #' Get pairs of clusters that share a strong similarity.
+  #'
   #' A strong similarity is observed when two clusters share the majority of their cells,
   #' i.e. confidence(A->C) > 0.5 & confidence(C->A) > 0.5.
   #' It corresponds to the minimum proportion of cells shared between two clusters.
@@ -91,6 +93,7 @@ get_cells_of_subgraph <- function(subgraph, base_clusters) {
 
 get_subgraphs <- function(population, strong_similarities, base_clusters, params) {
   #' Model a graph where every node is a base cluster predicted, and edges are strong similarities.
+  #'
   #' The graph is disjoint, and subgraphs (i.e. connected components) are extracted from it.
   #' They will be used to identify robust clusters.
   #'
@@ -139,6 +142,7 @@ get_subgraphs <- function(population, strong_similarities, base_clusters, params
 
 add_leftover_cluster <- function(population, robust_clusters, data.iteration) {
   #' Add a leftover cluster to the list of robust clusters.
+  #'
   #' It corresponds to a group of cells unassigned to any robust cluster.
   #'
   #' @param population a character. It corresponds to the cell population that scEVE will attempt to cluster.
@@ -170,6 +174,8 @@ get_meta_clusters <- function(population, base_clusters, data.iteration, records
   #' Extract robust clusters and a leftover cluster from a set of base clusters predicted
   #' with multiple clustering methods.
   #'
+  #' An empty list is returned if no robust cluster was predicted.
+  #'
   #' @param population a character. It corresponds to the cell population that scEVE will attempt to cluster.
   #' @param base_clusters a data.frame associating cells to their predicted clusters.
   #' Its rows are cells, its columns are clustering methods, and predicted populations are reported in the table.
@@ -197,6 +203,7 @@ get_meta_clusters <- function(population, base_clusters, data.iteration, records
   robustness_threshold <- max(params$robustness_threshold, records$meta[population, "robustness"])
   subgraph_is_robust_cluster <- function(subgraph) {subgraph$robustness > params$robustness_threshold}
   robust_clusters <- Filter(f=subgraph_is_robust_cluster, x=subgraphs)
+  if (length(robust_clusters) == 0) {return(list())}
   meta_clusters <- add_leftover_cluster(population, robust_clusters, data.iteration)
   meta_clusters <- stats::setNames(meta_clusters, sapply(X=meta_clusters, FUN="[[", "label"))
 

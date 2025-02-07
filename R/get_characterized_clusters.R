@@ -90,6 +90,7 @@ get_specific_markers <- function(meta_clusters) {
 
 get_characterized_clusters.markers_threshold <- function(meta_clusters, params, markers_threshold=22) {
   #' Check which meta-clusters are characterized, i.e. which meta-clusters have a minimum number of marker genes.
+  #'
   #' If every meta-cluster is characterized, return them. Else, return none.
   #'
   #' @param meta_clusters a list where every element is a pool of cells.
@@ -145,7 +146,8 @@ get_characterized_clusters <- function(population, meta_clusters, data.iteration
 
 generate_color_scale <- function(labels){
   #' Generate a vector of colors equal to the number of identities in the sample.
-  #' This function is directly copied from SCpubr.
+  #'
+  #' This function is directly copied from the repository of the SCpubr package.
   #' c.f. https://github.com/enblacar/SCpubr/blob/main/R/utils.R
   #'
   #' @param labels a vector of cluster labels.
