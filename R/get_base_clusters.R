@@ -13,9 +13,10 @@ use_Seurat <- function(SeuratObject.population, params) {
   #'
   #' @import Seurat
   #'
+  if (!"umap" %in% names(SeuratObject.population@reductions)) {
   SeuratObject.population <- Seurat::RunPCA(SeuratObject.population,
                                             features=Seurat::VariableFeatures(SeuratObject.population),
-                                            seed.use=params$random_state)
+                                            seed.use=params$random_state)}
   SeuratObject.population <- Seurat::FindNeighbors(SeuratObject.population,
                                                    features=Seurat::VariableFeatures(SeuratObject.population))
   SeuratObject.population <- Seurat::FindClusters(SeuratObject.population,
@@ -41,8 +42,7 @@ use_monocle3 <- function(SeuratObject.population, params) {
   if (!"umap" %in% names(SeuratObject.population@reductions)) {
     SeuratObject.population <- Seurat::RunUMAP(SeuratObject.population,
                                                features=Seurat::VariableFeatures(SeuratObject.population),
-                                               seed.use=params$random_state)
-  }
+                                               seed.use=params$random_state)}
   CDSObject <- SeuratWrappers::as.cell_data_set(SeuratObject.population)
   CDSObject <- monocle3::cluster_cells(CDSObject, random_seed=params$random_state)
   predictions <- CDSObject@clusters@listData$UMAP$clusters
@@ -105,9 +105,8 @@ get_data_input <- function(method, data) {
   #'
   #' @param method a clustering method used by scEVE.
   #' Valid methods include: densityCut, monocle3, Seurat and SHARP.
-  #' @param data a named list, with four names: `expression`, `SeuratObject`, `logtpm` and `ranking_of_genes`.
-  #' They correspond to the scRNA-seq expression matrix of a specific cell population,
-  #' as well as the SeuratObject, the log-transformed TPM matrix, and the ranking of genes generated from this matrix.
+  #' @param data a named list, with three names: `expression`, `SeuratObject` and `logtpm`.
+  #' They correspond to the scRNA-seq expression matrix of a specific cell population, its SeuratObject and its log2-transformed TPM values.
   #'
   #' @return one of `data$expression`, `data$SeuratObject` or `data$logtpm`.
   #'
@@ -205,9 +204,8 @@ get_base_clusters <- function(population, data.iteration, params, figures) {
   #' Get base clusters predicted with multiple clustering methods.
   #'
   #' @param population a character. It corresponds to the cell population that scEVE will attempt to cluster.
-  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `expression.init` and `ranking_of_genes.init`.
-  #' The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
-  #' The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.
+  #' @param data.iteration a named list, with two names: `expression` and `SeuratObject`.
+  #' They correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #' @param figures a boolean that indicates if figures should be drawn to explain the clustering iteration.
   #'
@@ -219,7 +217,7 @@ get_base_clusters <- function(population, data.iteration, params, figures) {
   #'
   #' @export
   #'
-  base_clusters <- get_base_clusters.default_methods(data.iteration, params)
+  base_clusters <- params$base_clusters_strategy(data.iteration, params)
   if (figures) {
     grDevices::pdf(file=glue::glue("{params$figures_path}/{population}_base_clusters.pdf"))
     plot <- draw_base_clusters(data.iteration$SeuratObject, base_clusters)

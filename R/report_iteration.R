@@ -11,7 +11,7 @@ get_drawings_paths <- function(population, params) {
   #' @return a vector of paths.
   #'
   drawings_paths <- c()
-  for (drawing in c("extract_data", "base_clusters", "meta_clusters", "marker_genes")) {
+  for (drawing in c("extract_data", "base_clusters", "robust_clusters", "marker_genes")) {
     filename <- glue("{params$figures_path}/{population}_{drawing}.pdf")
     if (file.exists(filename)) {drawings_paths <- c(drawings_paths, filename)}}
   return(drawings_paths)

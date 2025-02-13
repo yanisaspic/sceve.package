@@ -2,17 +2,7 @@
 % Please edit documentation in R/sceve.R
 \name{get_default_parameters}
 \alias{get_default_parameters}
-\title{Get the default parameters of the scEVE algorithm. These parameters are:
-\code{random_state} the integer seed used to have deterministic results.
-\code{robustness_threshold} the threshold used to identify robust clusters.
-\code{minimum_cells} the minimum number of cells expected in a population before attempting to sub-cluster it.
-\code{figures_path} & \code{sheets_path} the default paths where figures and result sheets are stored, respectively.
-\code{selected_genes_strategy} a function called to select a limited pool of genes for a clustering iteration.
-\code{base_clusters_strategy} a function called to predict base clusters with multiple clustering methods.
-\code{marker_genes_strategy} a function called to predict the marker genes of every meta-cluster.
-\code{characterized_clusters_strategy} a function called to identify characterized clusters.
-\code{cluster_memberships_strategy} a function called to quantify the
-Detailed information regarding the strategy parameters are available in the vignette of the package.}
+\title{Get the default parameters of the scEVE algorithm.}
 \usage{
 get_default_parameters()
 }
@@ -20,9 +10,8 @@ get_default_parameters()
 a list of parameters.
 }
 \description{
-Get the default parameters of the scEVE algorithm. These parameters are:
+These parameters are:
 \code{random_state} the integer seed used to have deterministic results.
-\code{robustness_threshold} the threshold used to identify robust clusters.
 \code{minimum_cells} the minimum number of cells expected in a population before attempting to sub-cluster it.
 \code{figures_path} & \code{sheets_path} the default paths where figures and result sheets are stored, respectively.
 \code{selected_genes_strategy} a function called to select a limited pool of genes for a clustering iteration.
@@ -30,5 +19,7 @@ Get the default parameters of the scEVE algorithm. These parameters are:
 \code{marker_genes_strategy} a function called to predict the marker genes of every meta-cluster.
 \code{characterized_clusters_strategy} a function called to identify characterized clusters.
 \code{cluster_memberships_strategy} a function called to quantify the
+}
+\details{
 Detailed information regarding the strategy parameters are available in the vignette of the package.
 }

@@ -9,9 +9,8 @@ get_base_clusters(population, data.iteration, params, figures)
 \arguments{
 \item{population}{a character. It corresponds to the cell population that scEVE will attempt to cluster.}
 
-\item{data.iteration}{a named list, with four names: \code{expression}, \code{SeuratObject}, \code{expression.init} and \code{ranking_of_genes.init}.
-The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
-The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.}
+\item{data.iteration}{a named list, with two names: \code{expression} and \code{SeuratObject}.
+They correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject.}
 
 \item{params}{a list of parameters (cf. \code{sceve::get_default_parameters()}).}
 

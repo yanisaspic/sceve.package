@@ -2,19 +2,19 @@
 % Please edit documentation in R/extract_data.R
 \name{get_SeuratObject.selected}
 \alias{get_SeuratObject.selected}
-\title{Get a SeuratObject from a scRNA-seq dataset of raw count expression, with selected genes.
-This function is used as a pre-processing step for the Seurat and monocle3 clustering algorithms.}
+\title{Get a SeuratObject from a scRNA-seq dataset of raw count expression, with selected genes.}
 \usage{
-get_SeuratObject.selected(expression.selected)
+get_SeuratObject.selected(expression.selected, params)
 }
 \arguments{
 \item{expression.selected}{a scRNA-seq dataset of raw count expression, with selected genes.
 Its rows are genes and its columns are cells.}
+
+\item{params}{a list of parameters (cf. \code{sceve::get_default_parameters()}).}
 }
 \value{
 a SeuratObject, on which the function ScaleData() of Seurat has been applied already.
 }
 \description{
-Get a SeuratObject from a scRNA-seq dataset of raw count expression, with selected genes.
 This function is used as a pre-processing step for the Seurat and monocle3 clustering algorithms.
 }

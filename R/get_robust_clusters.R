@@ -140,37 +140,30 @@ get_subgraphs <- function(population, strong_similarities, base_clusters, params
   return(subgraphs)
 }
 
-add_leftover_cluster <- function(population, robust_clusters, data.iteration) {
-  #' Add a leftover cluster to the list of robust clusters.
+filter_conflicting_cells <- function(robust_clusters) {
+  #' Filter out conflicting cells belonging to multiple robust clusters.
   #'
-  #' It corresponds to a group of cells unassigned to any robust cluster.
+  #' If a cell exists in multiple robust clusters, it is exclusively associated
+  #' to its most robust cluster. Robust clusters without cells are also removed.
   #'
-  #' @param population a character. It corresponds to the cell population that scEVE will attempt to cluster.
-  #' @param robust_clusters a list where every element is a pool of cells grouped together by multiple clustering methods.
+  #' @param robust_clusters a list where every element is a pool of cells.
   #' The elements are named lists, with five names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
-  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `expression.init` and `ranking_of_genes.init`.
-  #' The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
-  #' The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.
   #'
   #' @return a list where every element is a pool of cells.
   #' The elements are named lists, with five names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
   #'
-  #' @import glue
-  #'
-  n <- length(robust_clusters) + 1
-  cells_of_population <- colnames(data.iteration$expression)
-  cells_in_robust_clusters <- unlist(sapply(robust_clusters, "[[", "cells"))
-  leftover_cells <- setdiff(cells_of_population, cells_in_robust_clusters)
-  if (length(leftover_cells) > 0) {
-    leftover_cluster <- list(base_clusters=c(), clustering_methods=c(), robustness=0,
-                             cells=leftover_cells, label=glue::glue("{population}.{n}"))
-    robust_clusters[[n]] <- leftover_cluster}
+  cells <- c()
+  for (i in 1:length(robust_clusters)) {
+    robust_clusters[[i]]$cells <- setdiff(robust_clusters[[i]]$cells, cells)
+    cells <- c(cells, robust_clusters[[i]]$cells)}
+  cluster_has_cells <- function(cluster) {length(cluster$cells) > 0}
+  robust_clusters <- Filter(f=cluster_has_cells, x=robust_clusters)
   return(robust_clusters)
 }
 
-get_meta_clusters <- function(population, base_clusters, data.iteration, records, params, figures) {
+get_robust_clusters <- function(population, base_clusters, data.iteration, records, params, figures) {
   #' Extract robust clusters and a leftover cluster from a set of base clusters predicted
   #' with multiple clustering methods.
   #'
@@ -179,9 +172,8 @@ get_meta_clusters <- function(population, base_clusters, data.iteration, records
   #' @param population a character. It corresponds to the cell population that scEVE will attempt to cluster.
   #' @param base_clusters a data.frame associating cells to their predicted clusters.
   #' Its rows are cells, its columns are clustering methods, and predicted populations are reported in the table.
-  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `expression.init` and `ranking_of_genes.init`.
-  #' The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
-  #' The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.
+  #' @param data.iteration a named list, with two names: `expression` and `SeuratObject`.
+  #' They correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject.
   #' @param records a named list, with four data.frames: `cells`, `markers`, `meta` and `methods`.
   #' @param params a list of parameters (cf. `sceve::get_default_parameters()`).
   #' @param figures a boolean that indicates if figures should be drawn to explain the clustering iteration.
@@ -200,30 +192,34 @@ get_meta_clusters <- function(population, base_clusters, data.iteration, records
   associations <- get_associations(transaction_database)
   strong_similarities <- get_strong_similarities(associations)
   subgraphs <- get_subgraphs(population, strong_similarities, base_clusters, params)
-  robustness_threshold <- max(params$robustness_threshold, records$meta[population, "robustness"])
-  subgraph_is_robust_cluster <- function(subgraph) {subgraph$robustness > params$robustness_threshold}
-  robust_clusters <- Filter(f=subgraph_is_robust_cluster, x=subgraphs)
-  if (length(robust_clusters) == 0) {return(list())}
-  meta_clusters <- add_leftover_cluster(population, robust_clusters, data.iteration)
-  meta_clusters <- stats::setNames(meta_clusters, sapply(X=meta_clusters, FUN="[[", "label"))
 
-  if (figures) {
-    plot <- draw_meta_clusters(meta_clusters, data.iteration)
-    grDevices::pdf(file=glue::glue("{params$figures_path}/{population}_meta_clusters.pdf"))
+  n_methods <- ncol(base_clusters)
+  clusters_for_majority <- floor(n_methods / 2 + 1)
+  edges_for_majority <- clusters_for_majority * (clusters_for_majority - 1) / 2
+  majority_robustness <- 0.5 * edges_for_majority / (n_methods * (n_methods - 1) / 2)
+  # minimum robustness expected if a majority of methods predict a similar cluster
+  robustness_threshold <- max(majority_robustness, records$meta[population, "robustness"])
+
+  subgraph_is_robust_cluster <- function(subgraph) {subgraph$robustness > robustness_threshold}
+  robust_clusters <- Filter(f=subgraph_is_robust_cluster, x=subgraphs)
+  robust_clusters <- stats::setNames(robust_clusters, sapply(X=robust_clusters, FUN="[[", "label"))
+
+  if (length(robust_clusters) > 0 & figures) {
+    plot <- draw_robust_clusters(robust_clusters, data.iteration)
+    grDevices::pdf(file=glue::glue("{params$figures_path}/{population}_robust_clusters.pdf"))
     print(plot)
     grDevices::dev.off()}
-  return(meta_clusters)
+  return(robust_clusters)
 }
 
-draw_meta_clusters <- function(meta_clusters, data.iteration) {
+draw_robust_clusters <- function(robust_clusters, data.iteration) {
   #' Get composite U-MAP plots representing the meta-clusters predicted with the scEVE framework.
   #'
-  #' @param meta_clusters a list where every element is a pool of cells.
+  #' @param robust_clusters a list where every element is a pool of cells.
   #' The elements are named lists, with five names:
   #' `base_clusters`, `cells`, `clustering_methods`, `label` and `robustness`.
-  #' @param data.iteration a named list, with four names: `expression`, `SeuratObject`, `expression.init` and `ranking_of_genes.init`.
-  #' The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
-  #' The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.
+  #' @param data.iteration a named list, with two names: `expression` and `SeuratObject`.
+  #' They correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject.
   #'
   #' @return a plot.
   #'
@@ -238,11 +234,11 @@ draw_meta_clusters <- function(meta_clusters, data.iteration) {
   get_plot_coloring.cluster <- function(cluster) {
     plot_label <- glue::glue("{cluster$label} ({round(cluster$robustness, 2)})")
     stats::setNames(rep(plot_label, length(cluster$cells)), cluster$cells)}
-  plot_coloring <- sapply(X=meta_clusters, FUN=get_plot_coloring.cluster)
+  plot_coloring <- lapply(X=robust_clusters, FUN=get_plot_coloring.cluster)
   plot_coloring <- unlist(unname(plot_coloring))
-  data.iteration$SeuratObject[["meta_clusters"]] <- as.factor(plot_coloring)
+  data.iteration$SeuratObject[["robust_clusters"]] <- as.factor(plot_coloring)
 
-  plot <- SCpubr::do_DimPlot(data.iteration$SeuratObject, split.by="meta_clusters", legend.position="none")
+  plot <- SCpubr::do_DimPlot(data.iteration$SeuratObject, split.by="robust_clusters", legend.position="none")
   for (i in 1:length(plot)) {
     plot[[i]][[1]] <- plot[[i]][[1]] +
       ggplot2::theme_bw() +

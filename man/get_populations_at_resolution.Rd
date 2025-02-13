@@ -2,8 +2,7 @@
 % Please edit documentation in R/misc.R
 \name{get_populations_at_resolution}
 \alias{get_populations_at_resolution}
-\title{Get all the populations at a specific resolution.
-The root population is resolution 1, and its children populations are resolution 2, etc.}
+\title{Get all the populations at a specific resolution.}
 \usage{
 get_populations_at_resolution(resolution, records.cells)
 }
@@ -17,6 +16,5 @@ Its rows are cells and and its columns are population. The cell values range fro
 a vector of population labels.
 }
 \description{
-Get all the populations at a specific resolution.
 The root population is resolution 1, and its children populations are resolution 2, etc.
 }

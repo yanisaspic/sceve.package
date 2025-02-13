@@ -2,9 +2,7 @@
 % Please edit documentation in R/get_characterized_clusters.R
 \name{generate_color_scale}
 \alias{generate_color_scale}
-\title{Generate a vector of colors equal to the number of identities in the sample.
-This function is directly copied from SCpubr.
-c.f. https://github.com/enblacar/SCpubr/blob/main/R/utils.R}
+\title{Generate a vector of colors equal to the number of identities in the sample.}
 \usage{
 generate_color_scale(labels)
 }
@@ -15,7 +13,6 @@ generate_color_scale(labels)
 a named vector of colors.
 }
 \description{
-Generate a vector of colors equal to the number of identities in the sample.
-This function is directly copied from SCpubr.
+This function is directly copied from the repository of the SCpubr package.
 c.f. https://github.com/enblacar/SCpubr/blob/main/R/utils.R
 }

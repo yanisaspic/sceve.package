@@ -29,9 +29,8 @@ the function RunUMAP() of Seurat has been applied already.}
 \item{figures}{a boolean that indicates if figures should be drawn to explain the clustering iteration.}
 }
 \value{
-a named list, with four names: \code{expression}, \code{SeuratObject}, \code{expression.init} and \code{ranking_of_genes.init}.
-The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
-The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.
+a named list, with two names: \code{expression} and \code{SeuratObject}.
+They correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject.
 }
 \description{
 Extract a data subset with a specific cell population and their most variableg genes.

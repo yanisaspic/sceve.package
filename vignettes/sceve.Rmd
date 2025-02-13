@@ -121,8 +121,6 @@ These parameters include:
 
 -   `random_state`, the integer seed used to have deterministic results.
 
--   `robustness_threshold`, the threshold used to identify robust clusters.
-
 -   `minimum_cells`, the minimum number of cells expected in a population before attempting to sub-cluster it.
 
 -   `figures_path` & `sheets_path`, the default paths where figures and result sheets are stored, respectively.
@@ -151,9 +149,9 @@ A single clustering iteration with the scEVE framework is composed of four conse
 
 2.  the **prediction of base clusters**, where multiple clustering methods are applied on the extracted data.
 
-3.  the **identification of meta-clusters**, where robust clusters (*i.e.* subsets of cells grouped together by multiple methods), and a leftover cluster, are identified.
+3.  the **identification of robust clusters**, where robust clusters (*i.e.* subsets of cells grouped together by multiple methods), and a leftover cluster, are identified.
 
-4.  the **biological characterization of the meta-clusters**, where scEVE attempts to characterize meta-clusters by identifying marker genes.
+4.  the **biological characterization of the meta-clusters**, where scEVE attempts to characterize meta-clusters (*i.e* robust and leftover clusters) by identifying marker genes.
 
 After these four steps, the results of the clustering iteration are reported to the variable `records`.
 
@@ -177,7 +175,7 @@ dim(data.iteration$expression)
 By default, when `extract_data()` is called, a figure representing the pool of cells selected for the clustering iteration is drawn and saved to `params$figures_path`. Here, because we have set `figures=FALSE`, the figure was not drawn. We will draw it directly by calling `draw_extracted_data()`.
 
 ```{r draw_extracted_data}
-draw_extracted_data(population, SeuratObject.init=SeuratObject.init, records=records)
+draw_extracted_data(population, SeuratObject.init, records)
 ```
 
 The resulting figure is a U-MAP plot drawn with `SCpubr` [@blanco-carmona2022], where every cell selected for the clustering iteration is darkened. Briefly, a U-MAP plot is a projection of cells into blobs, on a 2D plan. Here, all the blobs are darkened, because every cell was selected for the clustering iteration (population `C`). To better showcase how this figure should be used, we will call `draw_extracted_data()` on a different clustering iteration, later.
@@ -209,7 +207,7 @@ The comparison of these U-MAP plots drawn with `SCpubr` [@blanco-carmona2022] re
 
 Following the **prediction of base clusters** with multiple methods, the scEVE framework will identify **robust clusters**, *i.e.* subsets of cells grouped together by multiple methods.
 
-### Identification of meta-clusters
+### Identification of robust clusters
 
 The scEVE framework quantifies the similarity of every pair of predicted clusters, according to the cells grouped in both clusters. From these similarities, we define strongly similar clusters as clusters that share the majority of their cells, and we draw a graph where every node is a cluster, and every edge connects two strongly similar clusters. The edges are weighted according to the similarity measured.
 
@@ -217,56 +215,45 @@ The scEVE framework quantifies the similarity of every pair of predicted cluster
 
 The drawn graph is disjoint, and every sub-graph (*i.e.* every connected component) indicates that a subset of cells has been grouped together by multiple clustering methods.The sub-graphs can have multiple structures ; for instance, if every method were to predict the exact same cluster, the resulting sub-graph would be a dense graph, where every edge is weighted 1.
 
-By comparing the structure of each sub-graph to this theoretical structure, the robustness of a cluster can be quantified (from 0 to 1). Any sub-graph with a robustness inferior to a threshold value is filtered out. This value is set to `params$robustness_threshold`, and it defaults to 0.33.
+By comparing the structure of each sub-graph to this theoretical structure, the robustness of a cluster can be quantified (from 0 to 1). Any sub-graph with a robustness inferior to a threshold value is filtered out. The threshold corresponds to the minimum robustness value if the majority of the clustering methods predict a similar cluster (*i.e.* 0.25 robustness for 4 clustering methods).
 
-For each remaining sub-graph, cells at the intersection of every base cluster will be assigned together in a robust cluster. The remaining unassigned cells will be grouped together in a **leftover cluster**. Both the robust clusters and the leftover cluster are **meta-clusters**.
-
-We can retrieve them by calling the function `get_meta_clusters()`.
+For each remaining sub-graph, cells at the intersection of every base cluster will be assigned together in a robust cluster. We can retrieve them by calling the function `get_robust_clusters()`.
 
 ```{r get_meta_clusters}
-meta_clusters <- get_meta_clusters(population, base_clusters, data.iteration, records, params, figures=FALSE)
-print(meta_clusters[[1]])
+robust_clusters <- get_robust_clusters(population, base_clusters, data.iteration, records, params, figures=FALSE)
+print(robust_clusters[[1]])
 ```
 
-Meta-clusters are sorted by decreasing robustness. Here, our most robust cluster is composed of 80 oligodendrocyte cells, grouped together by three different clustering methods: densityCut, monocle3 and Seurat. We label this meta-cluster `C.1`: it is the 1st most robust cluster predicted from the population `C`. The second most robust cluster will be labeled `C.2`, the third `C.3`, etc.
+Robust clusters are sorted by decreasing robustness. Here, our most robust cluster is composed of 80 oligodendrocyte cells, grouped together by three different clustering methods: densityCut, monocle3 and Seurat. We label this meta-cluster `C.1`: it is the 1st most robust cluster predicted from the population `C`. The second most robust cluster will be labeled `C.2`, the third `C.3`, etc.
 
-The last meta-cluster is the leftover cluster, and its robustness is null. In this iteration, up to 1286 cells were grouped in the leftover cluster.
-
-```{r C.leftovers}
-n_meta_clusters <- length(meta_clusters)
-leftover_cluster <- meta_clusters[[n_meta_clusters]]
-print(leftover_cluster$robustness)
-print(length(leftover_cluster$cells))
-```
-
-Normally, a figure representing the meta-clusters is drawn and saved to `params$figures_path`. Here, because we have set `figures=FALSE`, the figure was not drawn. We will draw it directly by calling `draw_meta_clusters()`.
-
-```{r draw_meta_clusters}
-p <- draw_meta_clusters(meta_clusters, data.iteration)
+```{r draw_robust_clusters}
+p <- draw_robust_clusters(robust_clusters, data.iteration)
 p
 ```
 
-The composite U-MAP plots drawn with `SCpubr` [@blanco-carmona2022] show the meta-clusters predicted, as well as their respective robustness. For instance, `C.1` has a robustness of 0.49, and its cells are projected in the bottom-left red blob. The last meta-cluster `C.5` has a robustness of 0: it corresponds to the leftover cluster. The top-left combined U-MAP plots integrates every meta-cluster. **Note** that some meta-clusters can be missing from the combined plot (*e.g.* `C.5`) due to plotting overlaps.
+The composite U-MAP plots drawn with `SCpubr` [@blanco-carmona2022] show the meta-clusters predicted, as well as their respective robustness. For instance, `C.1` has a robustness of 0.49, and its cells are projected in the bottom-left red blob. **Note** that some robust clusters might be missing in the combined plot due to color overlaps.
 
-After the **identification of meta-clusters**, the scEVE framework will attempt to characterize them.
+After **identifying robust clusters**, the scEVE framework attempts to characterize them.
 
 ### Biological characterization of the meta-clusters
 
-In order to facilitate the biological analysis of clusters, scEVE predicts marker genes for each meta-cluster. By default, an over-representation test is conducted on each cluster to identify genes that are frequently expressed in a cluster, but rarely expressed in the whole dataset.\
+Cells unassigned to a robust cluster are grouped together in a **leftover cluster**, with a null robustness. Together with the robust clusters, they form a pool of meta-clusters.
+
+In order to facilitate downstream biological analyses, scEVE predicts marker genes for each cluster in this pool, by leveraging the expression data of the clustering iteration. By default, the function `FindMarkers` of the `Seurat` package is used.\
 *The function defined in `params$marker_genes_strategy` is called to predict marker genes in every meta-cluster.*
 
-After identifying marker genes in each meta-cluster, the scEVE framework will attempt to detect **characterized clusters**. By default, characterized clusters are defined as meta-clusters with 22 or more marker genes. If every meta-cluster is characterized, scEVE will report them all. However, if any meta-cluster is insufficiently characterized, none will be reported, so as to prevent over-clustering.\
+After identifying marker genes in each meta-cluster, scEVE attempts to identify **characterized clusters**. By default, characterized clusters are defined as meta-clusters with 5 specific marker genes, at least. Robust clusters insufficiently characterized are merged to the leftover cluster, so as to prevent over-clustering. **Note** that a second attempt at characterizing the leftover cluster is conducted after the merging, so as to account for the new cells present in the cluster.\
 *The function defined in `params$characterized_clusters_strategy` is called to define which meta-clusters are sufficiently characterized, and to output them.*
 
 The detection of marker genes, and the subsequent identification of characterized clusters, are both conducted by calling the function `get_characterized_clusters()`.
 
 ```{r get_characterized_clusters}
-characterized_clusters <- get_characterized_clusters(population, meta_clusters, data.iteration, params, figures=FALSE)
-print(characterized_clusters[[4]]$markers)
-print(length(characterized_clusters[[4]]$specific_markers))
+characterized_clusters <- get_characterized_clusters(population, robust_clusters, data.iteration, params, figures=FALSE)
+print(characterized_clusters$C.3$markers)
+print(length(characterized_clusters$C.3$specific_markers))
 ```
 
-Here, we can see every marker gene predicted for the meta-cluster `C.2`, as well as their negative log10-transformed p-values. We can also see that the meta-cluster `C.4` has 72 specific marker genes. **Note** that because there is no infinity in spreadsheets, **marker genes with a p-value of 0 (e.g. `A2M`) are indicated by `#NUM!` in a spreadsheet**.
+Here, we can see every marker gene predicted for the meta-cluster `C.3`, as well as their log2 fold change. We can also see that the cluster `C.3` has 62 specific marker genes.
 
 To summarize this information, a figure representing the marker genes predicted in each meta-cluster is drawn in `params$figures_path`. Here, because we have set `figures=FALSE`, the figure was not drawn. We will draw it directly by calling `draw_marker_genes()`.
 
@@ -275,9 +262,7 @@ p <- draw_marker_genes(characterized_clusters)
 p
 ```
 
-The resulting upset-plot drawn with ggVennDiagram [@gao2021; @gao2024] is divided into a left and a right component. On the left, a bar-plot indicates the number of marker genes predicted in each cluster. By exploiting the bar-plot, we see that `C.1` has 125 marker genes, whereas the leftover cluster `C.5` has more than 200 marker genes. On the right, a bar-plot and a grid-plot report the distribution of marker genes across clusters. For instance, the first bar of the plot is associated to a single `C.1` dot on the grid. By leveraging both plots, we can learn that the cluster `C.1` has 41 specific markers. The sixth bar, which is associated to a `C.1` and a `C.2` on the grid, inform us that the 25 marker genes are shared by the two clusters, exclusively.
-
-**Note** that the function `draw_marker_genes()` was called on the characterized clusters for convenience. Normally, the marker genes of every meta-clusters are reported, regardless of them being sufficiently characterized or not.
+The resulting upset-plot drawn with ggVennDiagram [@gao2021; @gao2024] is divided into a left and a right component. On the left, a bar-plot indicates the number of marker genes predicted in each cluster. By exploiting the bar-plot, we see that `C.1` has 90 marker genes, whereas the leftover cluster `C.L` has more than 140 marker genes. On the right, a bar-plot and a grid-plot report the distribution of marker genes across clusters. For instance, the first bar of the plot is associated to a single `C.1` dot on the grid. By leveraging both plots, we can learn that the cluster `C.1` has 62 specific marker genes. The fifth bar, which is associated to `C.1` and `C.2` on the grid, inform us that the two clusters share 0 common marker genes.
 
 The **biological characterization of the meta-clusters** is the last step of the clustering iteration.
 
@@ -285,7 +270,7 @@ The **biological characterization of the meta-clusters** is the last step of the
 
 #### Results' report
 
-As a result of this last step, either (1) all meta-clusters were characterized, and are stored in `characterized_clusters`, or (2) some of them were not, and none are stored in `characterized_clusters`.
+As a result of this last step, either (1) two or more clusters biologically distinct from each other were predicted (they are stored in `characterized_clusters`), or (2) no two clusters biologically distinct from each other were predicted, and the variable `characterized_clusters` is an empty list.
 
 -   In the first case, the scEVE framework was able to sub-divide a pool of cell into multiple homogeneous clusters. Consequently, it will automatically conduct novel and independent clustering iterations to further sub-divide these predicted clusters. **Note** that for each of these clustering iterations, **the robustness threshold used to identify robust clusters will be updated**, so that sub-clusters are predicted if, and only if, they are more robust than their parent cluster.
 
@@ -308,10 +293,10 @@ Finally, after reporting the results of the clustering analysis, the `clusering_
 We can see below a sub-population predicted at the previous clustering iteration.
 
 ```{r next_iteration}
-draw_extracted_data(population="C.4", SeuratObject.init=SeuratObject.init, records=records)
+draw_extracted_data(population="C.2", SeuratObject.init=SeuratObject.init, records=records)
 ```
 
-Here, unlike the first time we ran `draw_extracted_data()`, only a subset of cells is darkened. They correspond to the cells in the population `C.4`, and scEVE will attempt to sub-divide them with this new clustering iteration. Because `C.4` had a robustness of 0.37, in this new iteration, robust clusters will correspond to meta-clusters with a robustness greater than 0.37.
+Here, unlike the first time we ran `draw_extracted_data()`, only a subset of cells is darkened. They correspond to the cells in the population `C.2`, and scEVE will attempt to sub-divide them with this new clustering iteration. Because `C.2` had a robustness of 0.40, in this new iteration, robust clusters will correspond to groups of cells with a robustness greater than 0.40.
 
 Eventually, scEVE won't be able to identify robust clusters, and the `clustering_status` of every predicted population will be set to `DONE`. At this point, the clustering analysis is over, and results with multiple cell resolutions and explicit robustness values will be generated.
 
@@ -329,13 +314,13 @@ In this section, we present each `_strategy` parameter, with its expected inputs
 
 This parameter expects a function that selects a limited pool of genes for a clustering iteration. It is called by `extract_data()`, and it expects two positional arguments: `expression` and `params`, respectively. It outputs a vector of genes.
 
-By default, it is set to `get_selected_genes.n_variable_genes`, and the n most variable genes are selected, with n=500.
+By default, it is set to `get_selected_genes.n_variable_genes`, and the n most variable genes are selected, with n=1000.
 
 ```{r params$selected_genes_strategy}
 print(params$selected_genes_strategy)
 ```
 
-We see that `n_genes=500`, but we can easily select a different number of variable genes by defining a novel function and setting it to `params$selected_genes_strategy`.
+We see that `n_genes=1000`, but we can easily select a different number of variable genes by defining a novel function and setting it to `params$selected_genes_strategy`.
 
 ```{r extract_data bis}
 f <- function(expression, params) {get_selected_genes.n_most_variable(expression, params, n_genes=2000)}
@@ -370,9 +355,9 @@ print(params$base_clusters_strategy)
 
 ### marker_genes_strategy
 
-This parameter expects a function called to predict the marker genes of every meta-cluster. It is called by `get_characterized_clusters()`, and it expects three positional arguments: `meta_clusters`, `data.iteration` and `params`, respectively. It outputs a list where every element is a pool of cells. The elements are named lists, with six names: `base_clusters`, `cells`, `clustering_methods`, `label`, `markers` and `robustness`.
+This parameter expects a function called to predict the marker genes of a single cluster. It is called by `get_characterized_clusters()`, and it expects three positional arguments: `cluster`, `data.iteration` and `params`, respectively. It outputs a named vector associating gene names to some metric (e.g. the log-fold change). 
 
-By default, it is set to `add_marker_genes.over_representation`, and an over-representation test is conducted on every cluster to identify genes that are frequently expressed in it, but rarely expressed in the complete pool of cells.
+By default, it is set to `add_marker_genes.seurat_findmarkers`, and the function `FindMarkers` from Seurat is used to identify genes with a high log2 fold change (log2FC>4) and a low adjusted p-value (p<0.001).
 
 ```{r params$marker_genes_strategy}
 print(params$marker_genes_strategy)
@@ -380,9 +365,9 @@ print(params$marker_genes_strategy)
 
 ### characterized_clusters_strategy
 
-This parameter expects a function called to identify characterized clusters. It is called by `get_characterized_clusters()`, and it expects two positional arguments: `meta_clusters` and `params`, respectively. It outputs a list where every element is a pool of cells. The elements are named lists, with seven names: `base_clusters`, `cells`, `clustering_methods`, `label`, `markers`, `robustness` and `specific_markers`.
+This parameter expects a function called to identify characterized clusters. It is called by `get_characterized_clusters()`, and it expects three positional arguments: `clusters`, `data.iteration` and `params`, respectively. It outputs a list where every element is a pool of cells. The elements are named lists, with seven names: `base_clusters`, `cells`, `clustering_methods`, `label`, `markers`, `robustness` and `specific_markers`.
 
-By default, it is set to `get_characterized_clusters.markers_threshold`, and a marker genes threshold is used to identify characterized clusters, with threshold=22. Then, if every meta-cluster is characterized, it returns them all. Otherwise, it returns none of them.
+By default, it is set to `get_characterized_clusters.specific_markers_threshold`, and a specific marker genes threshold is used to identify characterized clusters, with threshold=5. If at least two biologically distinct clusters are characterized, they are returned.
 
 ```{r params$characterized_clusters_strategy}
 print(params$characterized_clusters_strategy)

@@ -2,9 +2,7 @@
 % Please edit documentation in R/report_iteration.R
 \name{get_cluster_memberships.binary_membership}
 \alias{get_cluster_memberships.binary_membership}
-\title{Get a table reporting the cell composition of the characterized clusters.
-By calling this function, the cells assigned to the leftover cluster are hard clustered,
-i.e. their membership to the leftover is 1 and their membership to the other clusters is 0.}
+\title{Get a table reporting the cell composition of the characterized clusters.}
 \usage{
 get_cluster_memberships.binary_membership(
   characterized_clusters,
@@ -28,7 +26,6 @@ a data.frame associating cells to their predicted clusters.
 Its rows are cells, its columns are characterized clusters, and cell memberships are reported in the table.
 }
 \description{
-Get a table reporting the cell composition of the characterized clusters.
 By calling this function, the cells assigned to the leftover cluster are hard clustered,
 i.e. their membership to the leftover is 1 and their membership to the other clusters is 0.
 }

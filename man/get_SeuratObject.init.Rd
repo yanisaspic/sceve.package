@@ -2,9 +2,7 @@
 % Please edit documentation in R/sceve.R
 \name{get_SeuratObject.init}
 \alias{get_SeuratObject.init}
-\title{Get a SeuratObject from a scRNA-seq dataset of raw count expression, without selected genes.
-This function is used once prior to a scEVE clustering analysis in order to draw the
-extracted data at each clustering iteration (cf. \code{sceve::draw_extracted_data()}).}
+\title{Get a SeuratObject from a scRNA-seq dataset of raw count expression, without selected genes.}
 \usage{
 get_SeuratObject.init(expression.init)
 }
@@ -16,7 +14,6 @@ Its rows are genes and its columns are cells.}
 a SeuratObject, on which the function RunUMAP() of Seurat has been applied already.
 }
 \description{
-Get a SeuratObject from a scRNA-seq dataset of raw count expression, without selected genes.
 This function is used once prior to a scEVE clustering analysis in order to draw the
 extracted data at each clustering iteration (cf. \code{sceve::draw_extracted_data()}).
 }

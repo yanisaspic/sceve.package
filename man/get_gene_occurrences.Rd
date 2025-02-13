@@ -2,13 +2,7 @@
 % Please edit documentation in R/misc.R
 \name{get_gene_occurrences}
 \alias{get_gene_occurrences}
-\title{Get the gene occurrences with regards to the gene sampling effort.
-The occurrences correspond to the number of cells expressing a gene, and the
-sampling effort corresponds to the number of genes sampled in a cell.
-The genes are sampled in a descending order, so that the n most expressed genes
-are sampled with an effort of n.
-e.g.: only the most expressed gene is sampled with a sampling effort of 1,
-whereas the 3 most expressed genes are sampled with a sampling effort of 3.}
+\title{Get the gene occurrences with regards to the gene sampling effort.}
 \usage{
 get_gene_occurrences(ranking_of_genes)
 }
@@ -21,7 +15,6 @@ a data.frame associating gene occurrences to the sampling effort.
 Its rows are genes, its columns are sampling efforts, and gene occurrences are reported in the table.
 }
 \description{
-Get the gene occurrences with regards to the gene sampling effort.
 The occurrences correspond to the number of cells expressing a gene, and the
 sampling effort corresponds to the number of genes sampled in a cell.
 The genes are sampled in a descending order, so that the n most expressed genes

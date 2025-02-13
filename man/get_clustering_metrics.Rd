@@ -2,12 +2,7 @@
 % Please edit documentation in R/get_benchmark_sceve.R
 \name{get_clustering_metrics}
 \alias{get_clustering_metrics}
-\title{Using both intrinsic and extrinsic clustering metrics, measure a clustering performance.
-Extrinsic metrics compare cluster predictions to the cell annotations of the dataset.
-Intrinsic metrics compare the gene expression of cells in and out of their clusters.
-The \code{ARI} and the \code{NMI} are extrinsic metrics.
-The \code{Purity} and the \code{SI} are intrinsic metrics.
-For every metric, higher is better and the maximum value is 1.}
+\title{Using both intrinsic and extrinsic clustering metrics, measure a clustering performance.}
 \usage{
 get_clustering_metrics(data, preds)
 }
@@ -23,7 +18,6 @@ Its rows are genes and its columns are cells.
 a named vector with four names: \code{ARI}, \code{NMI}, \code{Purity} and \code{SI}.
 }
 \description{
-Using both intrinsic and extrinsic clustering metrics, measure a clustering performance.
 Extrinsic metrics compare cluster predictions to the cell annotations of the dataset.
 Intrinsic metrics compare the gene expression of cells in and out of their clusters.
 The \code{ARI} and the \code{NMI} are extrinsic metrics.

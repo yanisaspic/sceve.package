@@ -10,9 +10,8 @@ get_data_input(method, data)
 \item{method}{a clustering method used by scEVE.
 Valid methods include: densityCut, monocle3, Seurat and SHARP.}
 
-\item{data}{a named list, with four names: \code{expression}, \code{SeuratObject}, \code{logtpm} and \code{ranking_of_genes}.
-They correspond to the scRNA-seq expression matrix of a specific cell population,
-as well as the SeuratObject, the log-transformed TPM matrix, and the ranking of genes generated from this matrix.}
+\item{data}{a named list, with three names: \code{expression}, \code{SeuratObject} and \code{logtpm}.
+They correspond to the scRNA-seq expression matrix of a specific cell population, its SeuratObject and its log2-transformed TPM values.}
 }
 \value{
 one of \code{data$expression}, \code{data$SeuratObject} or \code{data$logtpm}.

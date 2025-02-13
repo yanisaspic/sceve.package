@@ -7,7 +7,6 @@ get_default_parameters <- function() {
   #'
   #' These parameters are:
   #' `random_state` the integer seed used to have deterministic results.
-  #' `robustness_threshold` the threshold used to identify robust clusters.
   #' `minimum_cells` the minimum number of cells expected in a population before attempting to sub-cluster it.
   #' `figures_path` & `sheets_path` the default paths where figures and result sheets are stored, respectively.
   #' `selected_genes_strategy` a function called to select a limited pool of genes for a clustering iteration.
@@ -22,11 +21,11 @@ get_default_parameters <- function() {
   #'
   #' @export
   #'
-  params <- list(random_state=1, robustness_threshold=0.33, minimum_cells=100,
+  params <- list(random_state=1, minimum_cells=100,
                  figures_path="./scEVE", sheets_path="./scEVE/records.xlsx",
                  selected_genes_strategy=get_selected_genes.n_most_variable,
                  base_clusters_strategy=get_base_clusters.default_methods,
-                 marker_genes_strategy=add_marker_genes.over_representation,
+                 marker_genes_strategy=get_marker_genes.seurat_findmarkers,
                  characterized_clusters_strategy=get_characterized_clusters.markers_threshold,
                  cluster_memberships_strategy=get_cluster_memberships.binary_membership)
   return(params)
@@ -76,7 +75,7 @@ get_SeuratObject.init <- function(expression.init) {
   #' @export
   #'
   SeuratObject.init <- Seurat::CreateSeuratObject(expression.init)
-  SeuratObject.init <- Seurat::FindVariableFeatures(SeuratObject.init, nfeatures = 1000)
+  SeuratObject.init <- Seurat::FindVariableFeatures(SeuratObject.init)
   SeuratObject.init <- Seurat::NormalizeData(SeuratObject.init)
   SeuratObject.init <- Seurat::ScaleData(SeuratObject.init,
                                          features=Seurat::VariableFeatures(SeuratObject.init))
@@ -120,10 +119,10 @@ sceve.iteration <- function(population, expression.init, SeuratObject.init, reco
     data.iteration <- extract_data(population, expression.init, SeuratObject.init, records, params, figures)
     if (length(data.iteration) == 0) {break()} # the cell population is too small
     base_clusters <- get_base_clusters(population, data.iteration, params, figures)
-    meta_clusters <- get_meta_clusters(population, base_clusters, data.iteration, records, params, figures)
-    if (length(meta_clusters) == 0) {break()} # multiple sub-clusters are not predicted
-    characterized_clusters <- get_characterized_clusters(population, meta_clusters, data.iteration, params, figures)
-    if (length(characterized_clusters) == 0) {break()}  # the sub-clusters are homogenous
+    robust_clusters <- get_robust_clusters(population, base_clusters, data.iteration, records, params, figures)
+    if (length(robust_clusters) == 0) {break()} # robust clusters are not predicted
+    characterized_clusters <- get_characterized_clusters(population, robust_clusters, data.iteration, params, figures)
+    if (length(characterized_clusters) == 0) {break()}  # the clusters are homogenous
     records <- report_iteration(population, characterized_clusters, data.iteration, records, params)
     break()}
   records$meta[population, "clustering_status"] <- "COMPLETE"
@@ -163,6 +162,8 @@ sceve <- function(expression.init, params=get_default_parameters(), figures=TRUE
 
   gene_is_marker <- function(gene) {sum(gene) > 0}
   records$markers <- records$markers[apply(X=records$markers, MARGIN=1, FUN=gene_is_marker),]
+  # rerun find_markers on every cluster vs population
+
   if (sheets) {openxlsx::write.xlsx(records, params$sheets_path, rowNames=TRUE)}
   results <- list(records=records, preds=factor(get_leaf_clusters(records$cells)))
   return(results)

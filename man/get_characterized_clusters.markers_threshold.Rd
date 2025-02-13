@@ -2,19 +2,22 @@
 % Please edit documentation in R/get_characterized_clusters.R
 \name{get_characterized_clusters.markers_threshold}
 \alias{get_characterized_clusters.markers_threshold}
-\title{Check which meta-clusters are characterized, i.e. which meta-clusters have a minimum number of marker genes.
-If every meta-cluster is characterized, return them. Else, return none.}
+\title{Filter out uncharacterized clusters, i.e. clusters with too little marker genes.}
 \usage{
 get_characterized_clusters.markers_threshold(
-  meta_clusters,
+  clusters,
+  data.iteration,
   params,
-  markers_threshold = 22
+  markers_threshold = 10
 )
 }
 \arguments{
-\item{meta_clusters}{a list where every element is a pool of cells.
-The elements are named lists, with seven names:
-\code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label}, \code{markers}, \code{robustness} and \code{specific_markers}.}
+\item{clusters}{a list where every element is a pool of cells.
+The elements are named lists, with six names:
+\code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label}, \code{markers} and \code{robustness}.}
+
+\item{data.iteration}{a named list, with two names: \code{expression} and \code{SeuratObject}.
+They correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject.}
 
 \item{params}{a list of parameters (cf. \code{sceve::get_default_parameters()}).}
 
@@ -22,10 +25,9 @@ The elements are named lists, with seven names:
 }
 \value{
 a list where every element is a pool of cells.
-The elements are named lists, with seven names:
-\code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label}, \code{markers}, \code{robustness} and \code{specific_markers}.
+The elements are named lists, with six names:
+\code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label}, \code{markers} and \code{robustness}.
 }
 \description{
-Check which meta-clusters are characterized, i.e. which meta-clusters have a minimum number of marker genes.
-If every meta-cluster is characterized, return them. Else, return none.
+Filter out uncharacterized clusters, i.e. clusters with too little marker genes.
 }

@@ -6,7 +6,7 @@
 \usage{
 get_characterized_clusters(
   population,
-  meta_clusters,
+  robust_clusters,
   data.iteration,
   params,
   figures
@@ -15,13 +15,12 @@ get_characterized_clusters(
 \arguments{
 \item{population}{a character. It corresponds to the cell population that scEVE will attempt to cluster.}
 
-\item{meta_clusters}{a list where every element is a pool of cells.
+\item{robust_clusters}{a list where every element is a pool of cells.
 The elements are named lists, with five names:
 \code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label} and \code{robustness}.}
 
-\item{data.iteration}{a named list, with four names: \code{expression}, \code{SeuratObject}, \code{expression.init} and \code{ranking_of_genes.init}.
-The two first elements correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject. and the ranking of genes generated from this matrix.
-The two last elements correspond to the full scRNA-seq expression matrix and the ranking of genes generated from this matrix.}
+\item{data.iteration}{named list, with two names: \code{expression} and \code{SeuratObject}.
+They correspond to the scRNA-seq expression matrix of a specific cell population and its SeuratObject.}
 
 \item{params}{a list of parameters (cf. \code{sceve::get_default_parameters()}).}
 
@@ -29,8 +28,8 @@ The two last elements correspond to the full scRNA-seq expression matrix and the
 }
 \value{
 a list where every element is a characterized pool of cells.
-The elements are named lists, with seven names:
-\code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label}, \code{markers}, \code{robustness} and \code{specific_markers}.
+The elements are named lists, with six names:
+\code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label}, \code{markers} and \code{robustness}.
 }
 \description{
 Get characterized meta-clusters. They correspond to the sub-populations predicted by the clustering iteration.

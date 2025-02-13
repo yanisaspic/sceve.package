@@ -2,10 +2,9 @@
 % Please edit documentation in R/extract_data.R
 \name{get_selected_genes.n_most_variable}
 \alias{get_selected_genes.n_most_variable}
-\title{Get the n most variable genes in a scRNA-seq dataset.
-The variable genes are identified by calling the function FindVariableFeatures() of Seurat.}
+\title{Get the n most variable genes in a scRNA-seq dataset.}
 \usage{
-get_selected_genes.n_most_variable(expression, params, n_genes = 500)
+get_selected_genes.n_most_variable(expression, params, n_genes = 1000)
 }
 \arguments{
 \item{expression}{a scRNA-seq dataset of raw count expression, without selected genes.
@@ -19,6 +18,5 @@ Its rows are genes and its columns are cells.}
 a vector of genes.
 }
 \description{
-Get the n most variable genes in a scRNA-seq dataset.
 The variable genes are identified by calling the function FindVariableFeatures() of Seurat.
 }

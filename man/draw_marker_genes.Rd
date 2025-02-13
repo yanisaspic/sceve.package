@@ -4,12 +4,12 @@
 \alias{draw_marker_genes}
 \title{Get an upset-plot representing the marker genes predicted in each meta-cluster.}
 \usage{
-draw_marker_genes(meta_clusters)
+draw_marker_genes(characterized_clusters)
 }
 \arguments{
-\item{meta_clusters}{a list where every element is a characterized pool of cells.
-The elements are named lists, with seven names:
-\code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label}, \code{markers}, \code{robustness} and \code{specific_markers}.}
+\item{characterized_clusters}{a list where every element is a characterized pool of cells.
+The elements are named lists, with six names:
+\code{base_clusters}, \code{cells}, \code{clustering_methods}, \code{label}, \code{markers} and \code{robustness}.}
 }
 \value{
 a plot.
