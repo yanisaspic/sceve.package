@@ -107,6 +107,11 @@ get_benchmark_sceve.data <- function(data, params, method_label) {
                    "peak_memory_usage (Mb)"=peak_memory_usage,
                    get_clustering_metrics(data, results$preds[!results$preds %in% leftover_populations]))
   benchmark <- as.data.frame(rbind(benchmark.1, benchmark.2))
+
+  ground_truth <- c("method"="ground_truth", "time (s)"=NA,
+                    "peak_memory_usage (Mb)"=NA, "ARI"=1, "NMI"=1,
+                    get_clustering_metrics.intrinsic(data$expression.init, data$ground_truth))
+  benchmark <- rbind(benchmark, ground_truth)
   return(benchmark)
 }
 
@@ -126,10 +131,6 @@ get_benchmark_sceve <- function(datasets, params, method_label) {
   get_benchmark_sceve.dataset <- function(dataset) {
     data <- load_data(dataset)
     benchmark <- get_benchmark_sceve.data(data, params, method_label)
-    ground_truth <- c("method"="ground_truth", "time (s)"=NA,
-                      "peak_memory_usage (Mb)"=NA, "ARI"=1, "NMI"=1,
-                      get_clustering_metrics.intrinsic(data$expression.init, data$ground_truth))
-    benchmark <- rbind(benchmark, ground_truth)
     benchmark[, "dataset"] <- dataset
     return(benchmark)}
 
