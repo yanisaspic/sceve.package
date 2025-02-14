@@ -18,7 +18,7 @@ get_datasets <- function() {
                 "SMART-Seq2", 6879, 9, 23686, 2018, "GSE115978", "10.1016/j.cell.2018.09.006",
                 "10x Genomics", 18456, 18, 23580, 2020, "GSE125969", "10.1016/j.celrep.2020.108023",
                 "Seq-Well", 22600, 17, 27899, 2018, "GSE116256", "10.1016/j.cell.2019.01.031",
-                "10x Genomics", 51775, 17, 22180, 2018, "E-MTAB-6149, E-MTAB-6653", "10.1038/s41591-018-0096-5",
+                "10x Genomics", 51775, 17, 22180, 2018, "E-MTAB-6149,   E-MTAB-6653,", "10.1038/s41591-018-0096-5",
                 "10x Genomics", 57530, 10, 24005, 2019, "CRA001160", "10.1038/s41422-019-0195-y")
   datasets <- c("Li_HumCRC_b", "Darmanis_HumGBM", "JerbyArnon_HumMLM", "Gillen_HumEPN",
                 "VanGalen_HumAML", "Lambrechts_HumNSCLC", "Peng_HumPDAC")

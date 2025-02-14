@@ -89,6 +89,8 @@ get_benchmark_sceve.data <- function(data, params, method_label) {
   #'
   #' @import glue
   #'
+  #' @export
+  #'
   get_memory_usage <- function(memory) {memory[[11]] + memory[[12]]}
   memory_usage.init <- get_memory_usage(gc(reset=TRUE))
   time.init <- Sys.time()
@@ -100,19 +102,17 @@ get_benchmark_sceve.data <- function(data, params, method_label) {
     (results$records$meta[population, "robustness"] == 0)}
   leftover_populations <- Filter(population_is_leftover, levels(results$preds))
 
-  benchmark.1 <- c("method"=method_label, "time (s)"=time,
-                   "peak_memory_usage (Mb)"=peak_memory_usage,
-                   get_clustering_metrics(data, results$preds))
-  benchmark.2 <- c("method"=glue::glue("{method_label}*"), "time (s)"=time,
-                   "peak_memory_usage (Mb)"=peak_memory_usage,
-                   get_clustering_metrics(data, results$preds[!results$preds %in% leftover_populations]))
-  benchmark <- as.data.frame(rbind(benchmark.1, benchmark.2))
-
+  benchmark <- c("method"=method_label, "time (s)"=time,
+                 "peak_memory_usage (Mb)"=peak_memory_usage,
+                 get_clustering_metrics(data, results$preds))
+  benchmark.star <- c("method"=glue::glue("{method_label}*"), "time (s)"=time,
+                      "peak_memory_usage (Mb)"=peak_memory_usage,
+                      get_clustering_metrics(data, results$preds[!results$preds %in% leftover_populations]))
   ground_truth <- c("method"="ground_truth", "time (s)"=NA,
                     "peak_memory_usage (Mb)"=NA, "ARI"=1, "NMI"=1,
                     get_clustering_metrics.intrinsic(data$expression.init, data$ground_truth))
-  benchmark <- rbind(benchmark, ground_truth)
-  return(benchmark)
+  benchmark_sceve <- as.data.frame(rbind(benchmark, benchmark.star, ground_truth))
+  return(benchmark_sceve)
 }
 
 get_benchmark_sceve <- function(datasets, params, method_label) {

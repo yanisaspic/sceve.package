@@ -162,7 +162,6 @@ sceve <- function(expression.init, params=get_default_parameters(), figures=TRUE
 
   gene_is_marker <- function(gene) {sum(gene) > 0}
   records$markers <- records$markers[apply(X=records$markers, MARGIN=1, FUN=gene_is_marker),]
-  # rerun find_markers on every cluster vs population
 
   if (sheets) {openxlsx::write.xlsx(records, params$sheets_path, rowNames=TRUE)}
   results <- list(records=records, preds=factor(get_leaf_clusters(records$cells)))

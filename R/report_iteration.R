@@ -93,7 +93,7 @@ report_markers <- function(characterized_clusters, records) {
   #'
   #' @return a data.frame associating predicted populations to their marker genes.
   #' Its rows are genes, its columns are predicted populations,
-  #' and the strength of the characterization (e.g. log10-transformed pvalues) are reported in the table.
+  #' and the strength of the characterization (e.g. log2-transformed pvalues) are reported in the table.
   #'
   #' @import stats
   #'

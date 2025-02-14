@@ -16,7 +16,7 @@ The elements are named lists, with seven names:
 \value{
 a data.frame associating predicted populations to their marker genes.
 Its rows are genes, its columns are predicted populations,
-and the strength of the characterization (e.g. log10-transformed pvalues) are reported in the table.
+and the strength of the characterization (e.g. log2-transformed pvalues) are reported in the table.
 }
 \description{
 Report the marker genes of the characterized clusters in the corresponding records sheet.

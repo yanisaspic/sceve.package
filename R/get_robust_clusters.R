@@ -238,7 +238,10 @@ draw_robust_clusters <- function(robust_clusters, data.iteration) {
   plot_coloring <- unlist(unname(plot_coloring))
   data.iteration$SeuratObject[["robust_clusters"]] <- as.factor(plot_coloring)
 
-  plot <- SCpubr::do_DimPlot(data.iteration$SeuratObject, split.by="robust_clusters", legend.position="none")
+  plot <- SCpubr::do_DimPlot(data.iteration$SeuratObject,
+                             split.by="robust_clusters",
+                             legend.position="none",
+                             na.value="grey25")
   for (i in 1:length(plot)) {
     plot[[i]][[1]] <- plot[[i]][[1]] +
       ggplot2::theme_bw() +

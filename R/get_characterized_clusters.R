@@ -143,7 +143,18 @@ generate_color_scale <- function(labels){
   #' @import colorspace
   #' @import grDevices
   #'
-  colors <- colorspace::qualitative_hcl(length(labels), palette = "Dark 3")
+
+  # this section is added to have a cohesive colormap __________________________
+  get_tail <- function(label) {
+    tmp <- strsplit(label, split=".", fixed=TRUE)[[1]]
+    tail <- tmp[length(tmp)]
+    return(tail)}
+  is_not_leftover <- function(label) {get_tail(label) != "L"}
+  robust_labels <- labels[sapply(X=labels, FUN=is_not_leftover)]
+  n <- get_tail(robust_labels[length(robust_labels)])
+  #_____________________________________________________________________________
+
+  colors <- colorspace::qualitative_hcl(as.numeric(n), palette = "Dark 3")
   colors <- grDevices::col2rgb(colors)
   colors <- grDevices::rgb2hsv(colors)
   colors["v", ] <- colors["v", ] - 0.1
@@ -153,6 +164,14 @@ generate_color_scale <- function(labels){
                            s = colors["s", ],
                            v = colors["v", ],
                            alpha = 1)
+
+  # this section is added to have a cohesive colormap __________________________
+  get_index <- function(label) {as.numeric(get_tail(label))}
+  robust_indexes <- sapply(X=robust_labels, FUN=get_index)
+  colors <- colors[robust_indexes]
+  if (!is_not_leftover(labels[length(labels)])) {colors <- c(colors, "#404040FF")}
+  #_____________________________________________________________________________
+
   names(colors) <- labels
   return(colors)
 }
