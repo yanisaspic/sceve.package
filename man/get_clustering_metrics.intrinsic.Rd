@@ -13,7 +13,7 @@ Its rows are genes and its columns are cells.}
 \item{preds}{a named factor associating cells to their predicted clusters.}
 }
 \value{
-a named vector with one name: \code{SI}.
+a named vector of with two names: \code{Purity} and \code{SI}.
 }
 \description{
 Using intrinsic metrics, measure a clustering performance.

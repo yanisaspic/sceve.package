@@ -25,7 +25,6 @@ Imports:
     densitycut,
     dplyr,
     forcats,
-    funtimes,
     ggplot2,
     ggplotify,
     ggVennDiagram,

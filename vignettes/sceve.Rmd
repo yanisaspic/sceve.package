@@ -404,9 +404,8 @@ It returns a table with 9 columns:
 
 -   `method` and `dataset` indicate which clustering method (or which set of scEVE parameters), and which scRNA-seq dataset was employed.
 -   `time (s)` and `peak_memory_usage (Mb)` measure the computational performance of the framework. Here, lower is better.
--   `ARI`, `NMI` and `Purity` are extrinsic measurements of the clustering performance of the framework. They compare cluster predictions to the cell annotations of the dataset. They are calculated with the package `aricode` [@chiquet2024]. Here, higher is better, and the maximum is 1.
--   `SI` is an intrinsic measurement of the clustering performance of the framework. It compares the gene expression of cells in and out of their clusters. It is calculated with the package `bluster` [@lun2024]. Here, higher is better, and the maximum is 1.
-- `n_cells` indicates the number of cells with a cluster label. 
+-   `ARI` and `NMI` are extrinsic measurements of the clustering performance of the framework. They compare cluster predictions to the cell annotations of the dataset. They are calculated with the package `aricode` [@chiquet2024]. Here, higher is better, and the maximum is 1.
+-   `Purity` and `SI` are intrinsic measurements of the clustering performance of the framework. They compare the gene expression of cells in and out of their clusters. They are calculated with the package `bluster` [@lun2024]. Here, higher is better, and the maximum is 1.
 
 From this table, a lot of information can be learned regarding different instances of the scEVE framework :
 
@@ -416,9 +415,9 @@ benchmark
 
 Here, we can see that two datasets were used in the benchmark: `Li_HumCRC_b` and `Darmanis_HumGBM`. For each dataset, three methods were benchmarked. The first method `scEVE.default` corresponds to the scEVE framework with its default parameters. We have manually labeled it this way, when we have called `get_benchmark_sceve()`. The second method is `scEVE.default*`, with an asterisk. It is identical to `scEVE.default`, except that the leftover clusters are not used to measure the clustering performance. Because of that, both methods share the same computational performance metrics. 
 
-Finally, the third method is `ground_truth`; it corresponds to the clusters predicted by the authors of the dataset. Obviously, because the `ARI`, the `NMI` and the `Purity` are based on the ground truth, their value is 1 (the maximum). We also cannot measure computational performance metrics for the `ground_truth`.
+Finally, the third method is `ground_truth`; it corresponds to the clusters predicted by the authors of the dataset. Obviously, because the `ARI` and the `NMI` are based on the ground truth, their value is 1 (the maximum). We also cannot measure computational performance metrics for the `ground_truth`.
 
-For the dataset `Li_HumCRC`, we see that both `scEVE.default` and `scEVE.default*` have no `SI`, as well as missing or null `ARI` and `NMI`. This happens when scEVE cannot predict any robust cluster in the initial cell population `C` (`n_cells==0` indicates that no cell was clustered). **Note** that the `Purity` can have a high value when a single cluster is predicted by scEVE; it should be interpreted next to the other clustering metrics.
+For the dataset `Li_HumCRC`, we see that both `scEVE.default` and `scEVE.default*` have no `Purity` and no `SI`, as well as missing or null `ARI` and `NMI`. This happens when scEVE cannot predict any robust cluster in the initial cell population `C` (`n_cells==0` indicates that no cell was clustered).
 
 For the dataset `Darmanis_HumGBM`, we see that both `scEVE.default` and `scEVE.default*` have a higher intrinsic clustering performance than `ground_truth`, with `scEVE.default*` having the highest clustering performances. It would indicate that, on this dataset, the expression of the clusters predicted using scEVE are more cohesive than the expression of the clusters proposed by the authors.
 

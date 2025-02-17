@@ -1,5 +1,4 @@
 "Functions called to benchmark an instance of the scEVE framework.
-
 	2025/02/03 @yanisaspic"
 
 get_data.bluster <- function(expression.init) {
@@ -31,15 +30,17 @@ get_clustering_metrics.intrinsic <- function(expression.init, preds) {
   #' Its rows are genes and its columns are cells.
   #' @param preds a named factor associating cells to their predicted clusters.
   #'
-  #' @return a named vector with one name: `SI`.
+  #' @return a named vector of with two names: `Purity` and `SI`.
   #'
   #' @import bluster
   #'
   n_clusters_predicted <- length(unique(preds))
-  if (n_clusters_predicted < 2) {return(c("SI"=NA))}
+  if (n_clusters_predicted < 2) {return(c("Purity"=NA, "SI"=NA))}
   data <- get_data.bluster(expression.init)
+  neighborhood_purity <- bluster::neighborPurity(data, preds)
   silhouette_index <- bluster::approxSilhouette(data, preds)
-  clustering_metrics.intrinsic <- c("SI"=mean(silhouette_index$width))
+  clustering_metrics.intrinsic <- c("Purity"=mean(neighborhood_purity$purity),
+                                    "SI"=mean(silhouette_index$width))
   return(clustering_metrics.intrinsic)
 }
 
@@ -48,8 +49,8 @@ get_clustering_metrics <- function(data, preds) {
   #'
   #' Extrinsic metrics compare cluster predictions to the cell annotations of the dataset.
   #' Intrinsic metrics compare the gene expression of cells in and out of their clusters.
-  #' The `ARI`, the `NMI` and the `Purity` are extrinsic metrics.
-  #' The `SI` is an intrinsic metric.
+  #' The `ARI` and the `NMI` are extrinsic metrics.
+  #' The `Purity` and the `SI` are intrinsic metrics.
   #' For every metric, higher is better and the maximum value is 1.
   #'
   #' @param data a named list with two elements: `expression.init` and `ground_truth`.
@@ -61,14 +62,12 @@ get_clustering_metrics <- function(data, preds) {
   #' @return a named vector with four names: `ARI`, `NMI`, `Purity` and `SI`.
   #'
   #' @import aricode
-  #' @import funtimes
   #'
   if (length(preds) < 2) {return(c("ARI"=NA, "NMI"=NA, "Purity"=NA, "SI"=NA))}
   ground_truth <- data$ground_truth[names(preds)]
   expression.init <- data$expression.init[, names(preds)]
   clustering_metrics <- c("ARI"=aricode::ARI(ground_truth, preds),
                           "NMI"=aricode::NMI(ground_truth, preds),
-                          "Purity"=funtimes::purity(ground_truth, preds)$pur,
                           get_clustering_metrics.intrinsic(expression.init, preds))
   return(clustering_metrics)
 }
