@@ -22,10 +22,12 @@ get_marker_genes.seurat_findmarkers <- function(cluster, data.iteration, params,
   #' @import Seurat
   #' @import stats
   #'
-  if (length(cluster$cells) < 3) {return(c())}  # prevents Error in ValidateCellGroups
   cells_of_iteration <- colnames(data.iteration$expression)
-  if (length(cells_of_iteration) == length(cluster$cells)) {return(c())}
   is_in_cluster <- function(cell) {ifelse(cell %in% cluster$cells, 1, 0)}
+  n_cells_in <- sum(is_in_cluster(cells_of_iteration))
+  n_cells_out <- length(cells_of_iteration) - n_cells_in
+  if (n_cells_in < 3 | n_cells_out < 3) {return(c())}
+
   Seurat::Idents(object=data.iteration$SeuratObject) <- factor(is_in_cluster(cells_of_iteration))
   markers <- Seurat::FindMarkers(data.iteration$SeuratObject, ident.1=1)
   markers <- markers[(markers$avg_log2FC > FC_threshold) & (markers$p_val_adj < pvalue_threshold), ]
