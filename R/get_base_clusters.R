@@ -76,7 +76,7 @@ use_SHARP <- function(expression.population, params) {
   #' @import SHARP
   #'
   results <- SHARP::SHARP(scExp=expression.population, exp.type="count",
-                          n.cores = 2, rN.seed=params$random_state)
+                          n.cores = 1, rN.seed=params$random_state)
   predictions <- get_formatted_predictions(cells=colnames(expression.population),
                                            predictions=results$pred_clusters)
   return(predictions)

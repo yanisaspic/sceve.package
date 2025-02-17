@@ -15,8 +15,8 @@ get_benchmark_sceve(datasets, params, method_label)
 \item{method_label}{a character.}
 }
 \value{
-a data.frame with eight columns: \code{method}, \code{dataset}, \code{time (s)},
-\code{peak_memory_usage (Mb)}, \code{ARI}, \code{NMI}, \code{Purity} and \code{SI}.
+a data.frame with nine columns: \code{method}, \code{dataset}, \code{time (s)},
+\code{peak_memory_usage (Mb)}, \code{ARI}, \code{NMI}, \code{Purity}, \code{SI} and \code{n_cells}.
 }
 \description{
 Using computational as well as intrinsic and extrinsic clustering metrics, measure

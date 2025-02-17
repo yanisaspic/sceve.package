@@ -18,8 +18,8 @@ Its rows are genes and its columns are cells.
 \item{method_label}{a character.}
 }
 \value{
-a data.frame with seven columns: \code{method}, \code{time (s)},
-\code{peak_memory_usage (Mb)}, \code{ARI}, \code{NMI}, \code{Purity} and \code{SI}.
+a data.frame with eight columns: \code{method}, \code{time (s)},
+\code{peak_memory_usage (Mb)}, \code{ARI}, \code{NMI}, \code{Purity}, \code{SI} and \code{n_cells}.
 }
 \description{
 Using computational as well as intrinsic and extrinsic clustering metrics, measure

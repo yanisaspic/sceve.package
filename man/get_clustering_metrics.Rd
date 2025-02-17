@@ -20,7 +20,7 @@ a named vector with four names: \code{ARI}, \code{NMI}, \code{Purity} and \code{
 \description{
 Extrinsic metrics compare cluster predictions to the cell annotations of the dataset.
 Intrinsic metrics compare the gene expression of cells in and out of their clusters.
-The \code{ARI} and the \code{NMI} are extrinsic metrics.
-The \code{Purity} and the \code{SI} are intrinsic metrics.
+The \code{ARI}, the \code{NMI} and the \code{Purity} are extrinsic metrics.
+The \code{SI} is an intrinsic metric.
 For every metric, higher is better and the maximum value is 1.
 }

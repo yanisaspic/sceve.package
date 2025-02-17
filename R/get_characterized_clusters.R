@@ -22,6 +22,7 @@ get_marker_genes.seurat_findmarkers <- function(cluster, data.iteration, params,
   #' @import Seurat
   #' @import stats
   #'
+  if (length(cluster$cells) < 3) {return(c())}  # prevents Error in ValidateCellGroups
   cells_of_iteration <- colnames(data.iteration$expression)
   if (length(cells_of_iteration) == length(cluster$cells)) {return(c())}
   is_in_cluster <- function(cell) {ifelse(cell %in% cluster$cells, 1, 0)}
