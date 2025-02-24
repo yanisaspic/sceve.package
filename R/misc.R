@@ -53,6 +53,8 @@ get_cells_of_population <- function(population, records.cells) {
   #'
   #' @return a vector of cells.
   #'
+  #' @export
+  #'
 
   if (population=="C") {return(rownames(records.cells))}
   # all cells belong to the root population
